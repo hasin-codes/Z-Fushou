@@ -1,0 +1,37 @@
+appId: com.zfushou.desktop
+productName: Z Fushou
+executableName: Z Fushou
+artifactName: Z Fushou-${version}-${arch}.${ext}
+asar: false
+protocols:
+  name: Z Fushou
+  schemes:
+    - z-fushou
+directories:
+  output: release
+  buildResources: build
+files:
+  - main.js
+  - preload.js
+  - package.json
+  - .next/standalone/**/*
+  - .next/static/**/*
+  - public/**
+mac:
+  target:
+    - dmg
+    - zip
+win:
+  icon: build/icon.ico
+  signAndEditExecutable: false
+  signExts: null
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+publish:
+  provider: github

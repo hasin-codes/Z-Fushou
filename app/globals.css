@@ -1,0 +1,501 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Enable class-based dark mode for Tailwind dark: variant */
+@custom-variant dark (&:where(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  /* Surfaces */
+  --color-base: #0f0f0f;
+  --color-surface: #1c1c20;
+  --color-surface-raised: #222226;
+  --color-surface-hover: rgba(255,255,255,0.02);
+
+  /* Borders */
+  --color-border: rgba(255,255,255,0.04);
+  --color-border-strong: rgba(255,255,255,0.1);
+
+  /* Text */
+  --color-text-primary: rgba(255,255,255,0.9);
+  --color-text-secondary: rgba(255,255,255,0.6);
+  --color-text-muted: rgba(255,255,255,0.4);
+
+  /* Accent — Indigo/Blue */
+  --color-accent: #6366f1;
+  --color-accent-dim: rgba(99,102,241,0.15);
+  --color-accent-bright: #818cf8;
+
+  /* Sage Neutral Scale */
+  --color-sage-50: #f6f8f6;
+  --color-sage-100: #edf2ed;
+  --color-sage-200: #dfe7df;
+  --color-sage-300: #c7d2c7;
+  --color-sage-400: #93a193;
+  --color-sage-500: #6f7f6f;
+  --color-sage-600: #556355;
+  --color-sage-700: #3f4b3f;
+
+  /* Status */
+  --color-critical: #fb7185;
+  --color-critical-dim: rgba(251,113,133,0.15);
+  --color-high: #f43f5e;
+  --color-high-dim: rgba(244,63,94,0.12);
+  --color-medium: #f59e0b;
+  --color-medium-dim: rgba(245,158,11,0.12);
+  --color-low: #10b981;
+  --color-low-dim: rgba(16,185,129,0.12);
+
+  /* Sentiment */
+  --color-frustrated: #f43f5e;
+  --color-confused: #eab308;
+  --color-neutral: #64748b;
+  --color-positive: #10b981;
+
+  /* Heat scale — for dot matrix and heatmap */
+  --color-heat-0: #141418;
+  --color-heat-1: #2a111a;
+  --color-heat-2: #4a1322;
+  --color-heat-3: #7b1a2d;
+  --color-heat-4: #be123c;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Easing */
+  --ease-ui: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-smooth: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Root override for light mode */
+  --color-base: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f8fafc;
+  --color-surface-hover: rgba(0,0,0,0.02);
+  --color-border: rgba(0,0,0,0.06);
+  --color-border-strong: rgba(0,0,0,0.1);
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+}
+
+@layer base {
+  * {
+    border-color: #e2e8f0;
+  }
+  .dark * {
+    border-color: #3B3B3B;
+  }
+  body {
+    @apply bg-base text-text-primary antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Dark mode — CSS variable overrides
+   ═══════════════════════════════════════════════════════ */
+
+html.dark {
+  /* Surfaces */
+  --color-base: #171717;
+  --color-surface: #262626;
+  --color-surface-raised: #2B2B2B;
+  --color-surface-hover: rgba(255,255,255,0.03);
+
+  /* Borders */
+  --color-border: #3B3B3B;
+  --color-border-strong: #4A4A4A;
+
+  /* Text */
+  --color-text-primary: #E5E5E5;
+  --color-text-secondary: #929292;
+  --color-text-muted: #606060;
+}
+
+/* Shell (sidebar + topbar) custom properties */
+:root {
+  --shell-bg: #1c1c1a;
+  --shell-popover-bg: #141412;
+  --card-text: #2d3219;
+  --card-border-inner: white;
+  --card-skeleton: #f1f5f9;
+}
+html.dark {
+  --shell-bg: #262626;
+  --shell-popover-bg: #262626;
+  --card-text: #E5E5E5;
+  --card-border-inner: transparent;
+  --card-skeleton: #3C3C3C;
+}
+
+/* KPI card dark bg colors */
+:root {
+  --kpi-purple-bg: #f8f6ff;
+  --kpi-orange-bg: #fff8f4;
+  --kpi-blue-bg: #f4f8ff;
+  --kpi-amber-bg: #fffbf0;
+  --kpi-rose-bg: #fff4f6;
+  --kpi-red-bg: #fef2f2;
+}
+html.dark {
+  --kpi-purple-bg: #2a2435;
+  --kpi-orange-bg: #2d2420;
+  --kpi-blue-bg: #1e2430;
+  --kpi-amber-bg: #2d2a1e;
+  --kpi-rose-bg: #2d1e22;
+  --kpi-red-bg: #2d1e1e;
+}
+
+/* Hot topics icon bg colors */
+:root {
+  --icon-purple-bg: #f8f6ff;
+  --icon-orange-bg: #fff8f4;
+  --icon-blue-bg: #f4f8ff;
+  --icon-green-bg: #f4fbf6;
+}
+html.dark {
+  --icon-purple-bg: #2a2435;
+  --icon-orange-bg: #2d2420;
+  --icon-blue-bg: #1e2430;
+  --icon-green-bg: #1e2a22;
+}
+
+/* Hot topics row bg colors — very light tint of each icon color */
+:root {
+  --row-purple-bg: #faf8ff;
+  --row-orange-bg: #fffbf8;
+  --row-blue-bg: #f7f9ff;
+  --row-green-bg: #f5fcf7;
+}
+html.dark {
+  --row-purple-bg: #282530;
+  --row-orange-bg: #2a2622;
+  --row-blue-bg: #232630;
+  --row-green-bg: #242b27;
+}
+
+/* Hot topics row glassmorphism in dark mode */
+html.dark .topic-row-glass {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Page content background — solid in dark mode */
+.page-content-bg {
+  background: #f4f6f8;
+}
+html.dark .page-content-bg {
+  background: #171717;
+}
+
+/* Overview card — solid border + smooth hover in dark mode */
+.overview-card {
+  position: relative;
+  transition: background-color 200ms ease;
+}
+html.dark .overview-card {
+  border-color: #3B3B3B;
+}
+html.dark .overview-card:hover {
+  background-color: #1F1F1F;
+}
+
+/* Dark mode hover for cluster rows */
+html.dark .cluster-feed-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Hide scrollbars globally — scroll still works */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-desktop-frame {
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 0%;
+  min-height: 884px;
+  --kpi-row-height: 112px;
+}
+
+.app-main-content {
+  container-type: inline-size;
+}
+
+.dashboard-compact-page {
+  display: flex;
+}
+
+.dashboard-desktop-page {
+  display: none;
+}
+
+@container (min-width: 1180px) {
+  .dashboard-compact-page {
+    display: none;
+  }
+
+  .dashboard-desktop-page {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.discord-sidebar-shell {
+  width: 0;
+  min-width: 0;
+  max-width: var(--discord-fixed-w, 430px);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.discord-sidebar-shell[data-open="true"] {
+  width: var(--discord-fixed-w, 430px);
+  min-width: var(--discord-fixed-w, 430px);
+  pointer-events: auto;
+}
+
+.dashboard-main-grid {
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  grid-template-rows: var(--kpi-row-height) 340px 680px;
+  gap: 24px;
+}
+
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-kpi-card {
+  height: 110px;
+  min-height: 110px;
+  max-height: 110px;
+}
+
+@media (min-width: 768px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-kpi-grid {
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .dashboard-kpi-card {
+    height: 112px;
+    min-height: 112px;
+    max-height: 112px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .dashboard-desktop-frame {
+    --kpi-row-height: 116px;
+  }
+
+  .dashboard-kpi-card {
+    height: 116px;
+    min-height: 116px;
+    max-height: 116px;
+  }
+}
+
+@container (max-width: 1500px) {
+  .dashboard-desktop-page {
+    padding: 20px;
+  }
+
+  .dashboard-desktop-frame {
+    min-height: 0;
+    --kpi-row-height: auto;
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-rows: auto 320px 420px 620px;
+    gap: 20px;
+  }
+
+  .dashboard-main-grid > :nth-child(1) {
+    grid-column: 1 / -1 !important;
+  }
+
+  .dashboard-main-grid > :nth-child(2) {
+    grid-column: 1 / 7 !important;
+  }
+
+  .dashboard-main-grid > :nth-child(3) {
+    grid-column: 7 / -1 !important;
+  }
+
+  .dashboard-main-grid > :nth-child(4) {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  .dashboard-main-grid > :nth-child(5) {
+    grid-column: 1 / -1 !important;
+  }
+
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@container (max-width: 860px) {
+  .dashboard-desktop-page {
+    padding: 16px;
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 320px 320px 420px 620px;
+    gap: 16px;
+  }
+
+  .dashboard-main-grid > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-kpi-card {
+    height: 104px;
+    min-height: 104px;
+    max-height: 104px;
+  }
+
+  .conversation-layout {
+    flex-direction: column !important;
+  }
+
+  .conversation-list-panel,
+  .conversation-message-panel {
+    width: 100% !important;
+  }
+
+  .conversation-list-panel {
+    height: 360px !important;
+  }
+
+  .conversation-message-panel {
+    height: 680px !important;
+  }
+}
+
+@container (max-width: 560px) {
+  .dashboard-kpi-card {
+    height: 96px;
+    min-height: 96px;
+    max-height: 96px;
+  }
+}
+
+/* Avatar color palette — 8 colors for username hashing */
+.avatar-0 { background-color: #c94f4f; }
+.avatar-1 { background-color: #c98f3a; }
+.avatar-2 { background-color: #3a9e6e; }
+.avatar-3 { background-color: #e8813a; }
+.avatar-4 { background-color: #5b8cd4; }
+.avatar-5 { background-color: #9b6bc9; }
+.avatar-6 { background-color: #4aad7a; }
+.avatar-7 { background-color: #d4873a; }
+
+/* Enter animation utility */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enter 280ms var(--ease-ui) both;
+}
+
+/* Stagger helper — apply via inline style: animation-delay: calc(var(--i) * 40ms) */
+
+/* Fade+slide for inline reveals (MessageRow hover actions) */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cluster feed row — staggered entry + hover, no inline animation to avoid React shorthand conflicts */
+.cluster-feed-row {
+  animation-name: fadeSlideIn;
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease-ui);
+  animation-fill-mode: both;
+  animation-delay: var(--stagger-delay, 0ms);
+  transition: background-color 120ms var(--ease-ui);
+  background: transparent;
+}
+.cluster-feed-row:hover {
+  background: #f8fafc;
+}
+
+/* Cluster table row — staggered entry */
+.cluster-row-enter {
+  animation-name: fadeSlideIn;
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease-ui);
+  animation-fill-mode: both;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+/* Hide scrollbar on mobile horizontal scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
