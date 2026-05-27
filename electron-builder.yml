@@ -2,7 +2,9 @@ appId: com.zfushou.desktop
 productName: Z Fushou
 executableName: Z Fushou
 artifactName: Z Fushou-${version}-${arch}.${ext}
-asar: false
+asar: true
+asarUnpack:
+  - "**/*.node"
 protocols:
   name: Z Fushou
   schemes:

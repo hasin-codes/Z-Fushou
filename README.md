@@ -1,6 +1,8 @@
 # Z Fushou
 
-Internal community monitoring and governance desktop application. Built as an Electron-wrapped Next.js dashboard that surfaces conversation clusters, sentiment analysis, hot topics, and KPI metrics from Supabase Edge Functions.
+Community intelligence platform by [Z.ai](https://z.ai). Real-time monitoring, sentiment analysis, and governance for Discord communities — delivered as a native desktop application.
+
+**Author:** Hasin Raiyan — [hasinraiyan.me](https://hasinraiyan.me)
 
 ---
 
