@@ -14,6 +14,16 @@ import type { ClusterWithSummary, EnrichedMessage } from '@/types';
 export function ShellLayout({ children }: { children: React.ReactNode }) {
   const [clusters, setClusters] = useState<ClusterWithSummary[]>([]);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
+  // Listen for downloaded updates
+  useEffect(() => {
+    const handler = (version: string) => setUpdateVersion(version);
+    window.updater?.onUpdateAvailable?.(handler);
+    return () => {
+      window.updater?.offUpdateAvailable?.(handler);
+    };
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -41,6 +51,19 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col h-dvh overflow-hidden text-slate-900 dark:text-[#E5E5E5] font-sans" style={{ backgroundColor: 'var(--shell-bg)' }}>
         {/* Windows Control Topbar */}
         <WindowControlTopbar />
+
+        {/* Update available banner */}
+        {updateVersion && (
+          <div className="flex items-center justify-center gap-3 px-4 py-1.5 bg-[#5a6332] text-white text-[13px] font-semibold select-none">
+            <span>Update {updateVersion} ready</span>
+            <button
+              onClick={() => window.updater?.restart?.()}
+              className="px-3 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white text-[12px] font-bold transition-colors"
+            >
+              Restart to update
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 flex min-w-0 overflow-hidden relative">
           {/* Left Sidebar — hidden on mobile, shown on lg+ */}

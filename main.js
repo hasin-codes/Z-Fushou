@@ -12,6 +12,7 @@ const net = require('net');
 const { fork } = require('child_process');
 const http = require('http');
 const keytar = require('keytar');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 let discordView;
@@ -24,6 +25,33 @@ let isDiscordViewAdded = false;
 let pendingDeepLinkToken = null;
 
 Menu.setApplicationMenu(null);
+
+// ── Auto-updater ────────────────────────────────────────────────────────────
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.setFeedURL({
+  provider: 'github',
+  owner: 'hasin-codes',
+  repo: 'Z-Fushou',
+});
+
+autoUpdater.on('update-available', (info) => {
+  safeConsole('log', '[updater] Update available:', info.version);
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  safeConsole('log', `[updater] Downloading ${progress.percent.toFixed(1)}% (${(progress.transferred / 1048576).toFixed(1)}/${(progress.total / 1048576).toFixed(1)} MB)`);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  safeConsole('log', '[updater] Update downloaded:', info.version);
+  // Notify the renderer so it can show a restart prompt
+  mainWindow?.webContents.send('updater:available', info.version);
+});
+
+autoUpdater.on('error', (error) => {
+  safeConsole('error', '[updater] Error:', error?.message || error);
+});
 
 // ── Deep-link / keytar constants ──────────────────────────────────────────
 const DEEP_LINK_SCHEME = 'z-fushou';
@@ -454,6 +482,15 @@ async function boot() {
   }
 
   await createMainWindow();
+
+  // Check for updates after the window is ready
+  if (!isDev) {
+    try {
+      await autoUpdater.checkForUpdates();
+    } catch (e) {
+      safeConsole('error', '[updater] Check failed:', e?.message || e);
+    }
+  }
 }
 
 // ── Discord sidebar IPC ──────────────────────────────────────────────────
@@ -592,6 +629,12 @@ ipcMain.handle('auth:delete-token', async () => {
 
 ipcMain.handle('auth:open-login', async () => {
   await shell.openExternal(`${APP_URL}/desktop-login`);
+});
+
+// ── Updater IPC ────────────────────────────────────────────────────────────
+
+ipcMain.on('updater:restart', () => {
+  autoUpdater.quitAndInstall();
 });
 
 // ── Lifecycle ────────────────────────────────────────────────────────────

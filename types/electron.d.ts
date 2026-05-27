@@ -35,5 +35,10 @@ declare global {
       onDeepLinkToken: (callback: (token: string) => void) => void;
       offDeepLinkToken: (callback: (token: string) => void) => void;
     };
+    updater?: {
+      restart: () => void;
+      onUpdateAvailable: (callback: (version: string) => void) => void;
+      offUpdateAvailable: (callback: (version: string) => void) => void;
+    };
   }
 }

@@ -56,3 +56,23 @@ contextBridge.exposeInMainWorld('desktopAuth', {
     }
   },
 });
+
+// ── Updater bridge ─────────────────────────────────────────────────────────
+
+const updateHandlers = new WeakMap();
+
+contextBridge.exposeInMainWorld('updater', {
+  restart: () => ipcRenderer.send('updater:restart'),
+  onUpdateAvailable: (callback) => {
+    const handler = (_event, version) => callback(version);
+    updateHandlers.set(callback, handler);
+    ipcRenderer.on('updater:available', handler);
+  },
+  offUpdateAvailable: (callback) => {
+    const handler = updateHandlers.get(callback);
+    if (handler) {
+      ipcRenderer.off('updater:available', handler);
+      updateHandlers.delete(callback);
+    }
+  },
+});
