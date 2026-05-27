@@ -201,7 +201,7 @@ async function startProductionNextServer() {
   const appPath = app.getAppPath();
   // When packaged with asar, fork() cannot execute from inside the archive.
   // Strip the asar suffix so Node reads the real directory on disk.
-  const basePath = appPath.replace(/\.asar(?:\\|\/)[^.]+$/, '.asar.unpacked');
+  const basePath = appPath.replace(/\.asar(?=\/|\\|$)/, '.asar.unpacked');
   const resolvedPath = basePath !== appPath && require('fs').existsSync(path.join(basePath, '.next', 'standalone', 'server.js'))
     ? basePath
     : appPath;
