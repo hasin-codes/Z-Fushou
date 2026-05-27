@@ -5,6 +5,10 @@ artifactName: Z Fushou-${version}-${arch}.${ext}
 asar: true
 asarUnpack:
   - "**/*.node"
+  - ".next/standalone/**/*"
+  - ".next/static/**/*"
+  - "build/icon.png"
+  - "build/icon.ico"
 protocols:
   name: Z Fushou
   schemes:
@@ -16,6 +20,8 @@ files:
   - main.js
   - preload.js
   - package.json
+  - build/icon.ico
+  - build/icon.png
   - .next/standalone/**/*
   - .next/static/**/*
   - public/**

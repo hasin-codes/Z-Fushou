@@ -199,9 +199,17 @@ async function loadUrlWithRetry(webContentsOwner, url, attempts = 3) {
 async function startProductionNextServer() {
   const port = await findAvailablePort();
   const appPath = app.getAppPath();
-  const standaloneDir = path.join(appPath, '.next', 'standalone');
+  // When packaged with asar, fork() cannot execute from inside the archive.
+  // Strip the asar suffix so Node reads the real directory on disk.
+  const basePath = appPath.replace(/\.asar(?:\\|\/)[^.]+$/, '.asar.unpacked');
+  const resolvedPath = basePath !== appPath && require('fs').existsSync(path.join(basePath, '.next', 'standalone', 'server.js'))
+    ? basePath
+    : appPath;
+  const standaloneDir = path.join(resolvedPath, '.next', 'standalone');
   const serverPath = path.join(standaloneDir, 'server.js');
   const rendererUrl = `http://127.0.0.1:${port}`;
+
+  safeConsole('log', `[next] Starting standalone server from ${standaloneDir}`);
 
   nextServerProcess = fork(serverPath, [], {
     cwd: standaloneDir,
