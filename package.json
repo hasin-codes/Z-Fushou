@@ -1,6 +1,8 @@
 {
   "name": "z-fushou",
   "version": "0.67.0",
+  "description": "Community intelligence platform by Z.ai. Real-time monitoring, sentiment analysis, and governance for Discord communities.",
+  "author": "Hasin Raiyan <hasinraiyan.me>",
   "private": true,
   "main": "main.js",
   "scripts": {
