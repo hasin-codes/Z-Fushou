@@ -9,6 +9,7 @@ import { ConversationInsights } from '@/components/overview/conversation-insight
 import { MobileHeader } from '@/components/overview/mobile-header';
 import { MobileHotTopics } from '@/components/overview/mobile-hot-topics';
 import { MobileConversationInsights } from '@/components/overview/mobile-conversation-insights';
+import { DashboardLoader } from '@/components/shared/dashboard-loader';
 import { useOverviewData } from '@/hooks/use-overview-data';
 
 function OverviewContent() {
@@ -29,8 +30,9 @@ function OverviewContent() {
 
   return (
     <div
-      className="h-full overflow-y-auto custom-scrollbar page-content-bg"
+      className="h-full overflow-y-auto custom-scrollbar page-content-bg relative"
     >
+      <DashboardLoader visible={loading} />
       {/* ───────────────── MOBILE ───────────────── */}
       <div className="dashboard-compact-page flex min-w-0 flex-col gap-5 pb-24 lg:pb-8">
         <MobileHeader />

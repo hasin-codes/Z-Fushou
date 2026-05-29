@@ -25,7 +25,7 @@ const CLUSTER_ICONS: { bg: string; icon: React.ReactNode }[] = [
   {
     bg: '#f4f8ff',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
@@ -40,7 +40,7 @@ const CLUSTER_ICONS: { bg: string; icon: React.ReactNode }[] = [
   },
 ];
 
-const SPARK_COLORS = ['#6366f1', '#f97316', '#3b82f6', '#14b8a6', '#ec4899', '#f59e0b'];
+const SPARK_COLORS = ['#6366f1', '#f97316', '#5a6332', '#14b8a6', '#ec4899', '#f59e0b'];
 
 function MiniSparkline({ seed, color }: { seed: number; color: string }) {
   const points = useMemo(() => {

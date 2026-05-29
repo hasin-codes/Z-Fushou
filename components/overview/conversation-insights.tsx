@@ -21,7 +21,7 @@ export function ConversationInsights({ mentions }: { mentions: MentionedMessage[
       <Tabs value={mainTab} onValueChange={v => setMainTab(v as MainTab)} className="flex flex-col h-full">
         {/* Header with main pill-style tabs */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-sage-100 dark:border-[#3B3B3B] shrink-0">
-          <div className="flex items-center gap-1 bg-sage-100 dark:bg-[#3C3C3C] rounded-full p-1">
+          <div className="flex items-center gap-1 bg-sage-100 dark:bg-[#2a2a2a] rounded-full p-1">
             {MAIN_TABS.map(t => (
               <button
                 key={t.key}
@@ -30,7 +30,7 @@ export function ConversationInsights({ mentions }: { mentions: MentionedMessage[
                   t.disabled
                     ? 'text-sage-300 dark:text-[#606060] cursor-not-allowed'
                     : mainTab === t.key
-                      ? 'bg-[#1e2a4a] dark:bg-[#2B2B2B] text-white shadow-sm'
+                      ? 'bg-[#5a6332] dark:bg-[#3a4228] text-white shadow-sm'
                       : 'text-sage-500 dark:text-[#929292] hover:text-sage-700 dark:hover:text-[#E5E5E5]'
                 }`}
               >

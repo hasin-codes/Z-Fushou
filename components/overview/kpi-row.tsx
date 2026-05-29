@@ -166,7 +166,7 @@ const CARDS: KpiCardDef[] = [
   },
   {
     label: 'Active Users',
-    color: '#3b82f6',
+    color: '#5a6332',
     bgColor: 'var(--kpi-blue-bg)',
     icon: IconUsers,
     getValue: kpi => formatNumber(kpi.active_users),

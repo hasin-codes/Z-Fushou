@@ -46,7 +46,7 @@ const CLUSTER_ICONS: { bg: string; rowBg: string; icon: React.ReactNode }[] = [
     bg: 'var(--icon-blue-bg)',
     rowBg: 'var(--row-blue-bg)',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
@@ -63,7 +63,7 @@ const CLUSTER_ICONS: { bg: string; rowBg: string; icon: React.ReactNode }[] = [
 ];
 
 /* ── Mini sparkline SVG (wavy line) ── */
-const SPARK_COLORS = ['#6366f1', '#8b5cf6', '#f97316', '#14b8a6', '#3b82f6', '#ec4899', '#f59e0b', '#e11d48'];
+const SPARK_COLORS = ['#6366f1', '#8b5cf6', '#f97316', '#14b8a6', '#5a6332', '#ec4899', '#f59e0b', '#e11d48'];
 
 function MiniSparkline({ seed, color }: { seed: number; color: string }) {
   const points = useMemo(() => {
@@ -300,14 +300,14 @@ function TopicDetailView({ cluster, tab, onTabChange, onBack }: TopicDetailViewP
 
       {/* Pill Tab Group */}
       <div className="flex items-center px-5 py-3 shrink-0">
-        <div className="flex items-center gap-1 bg-sage-100 dark:bg-[#3C3C3C] rounded-full p-1">
+        <div className="flex items-center gap-1 bg-sage-100 dark:bg-[#2a2a2a] rounded-full p-1">
           {DETAIL_TABS.map(t => (
             <button
               key={t.key}
               onClick={() => onTabChange(t.key)}
               className={`text-[11px] px-3 py-1 rounded-full font-semibold transition-all ${
                 tab === t.key
-                  ? 'bg-[#1e2a4a] dark:bg-[#2B2B2B] text-white shadow-sm'
+                  ? 'bg-[#5a6332] dark:bg-[#3a4228] text-white shadow-sm'
                   : 'text-sage-500 dark:text-[#929292] hover:text-sage-700 dark:hover:text-[#E5E5E5]'
               }`}
             >
@@ -334,14 +334,14 @@ function SummaryTab({ cluster }: { cluster: ClusterWithSummary }) {
   if (!cluster.summary) {
     return (
       <div className="flex items-center justify-center py-10">
-        <p className="text-[12px] text-sage-400 dark:text-[#606060]">No summary available</p>
+        <p className="text-[12px] text-slate-400 dark:text-[#707070]">No summary available</p>
       </div>
     );
   }
 
   return (
     <div className="py-2">
-      <p className="text-[13px] text-sage-600 dark:text-[#929292] leading-relaxed whitespace-pre-line">
+      <p className="text-[13px] text-[#2d3219] dark:text-[#d4d4d4] font-medium leading-relaxed whitespace-pre-line">
         {cluster.summary}
       </p>
     </div>
@@ -353,7 +353,7 @@ function KeyIssuesTab({ cluster }: { cluster: ClusterWithSummary }) {
   if (!cluster.key_issues.length) {
     return (
       <div className="flex items-center justify-center py-10">
-        <p className="text-[12px] text-sage-400 dark:text-[#606060]">No key issues identified</p>
+        <p className="text-[12px] text-slate-400 dark:text-[#707070]">No key issues identified</p>
       </div>
     );
   }
@@ -363,10 +363,10 @@ function KeyIssuesTab({ cluster }: { cluster: ClusterWithSummary }) {
       {cluster.key_issues.map((issue, i) => (
         <div
           key={i}
-          className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-sage-50 dark:bg-[#3C3C3C] border border-sage-100 dark:border-[#3B3B3B]"
+          className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-slate-100 dark:bg-[#2e2e2e] border border-slate-200 dark:border-[#3e3e3e]"
         >
-          <span className="text-[11px] font-bold text-sage-300 dark:text-[#606060] mt-px shrink-0">{i + 1}</span>
-          <span className="text-[12px] text-sage-600 dark:text-[#929292] leading-relaxed">{issue}</span>
+          <span className="text-[12px] font-bold text-[#5a6332] dark:text-[#8b9a5e] mt-px shrink-0">{i + 1}</span>
+          <span className="text-[12px] text-[#2d3219] dark:text-[#d4d4d4] font-medium leading-relaxed">{issue}</span>
         </div>
       ))}
     </div>
@@ -378,7 +378,7 @@ function UnansweredTab({ cluster }: { cluster: ClusterWithSummary }) {
   if (!cluster.unanswered_questions.length) {
     return (
       <div className="flex items-center justify-center py-10">
-        <p className="text-[12px] text-sage-400 dark:text-[#606060]">No unanswered questions</p>
+        <p className="text-[12px] text-slate-400 dark:text-[#707070]">No unanswered questions</p>
       </div>
     );
   }
@@ -388,10 +388,10 @@ function UnansweredTab({ cluster }: { cluster: ClusterWithSummary }) {
       {cluster.unanswered_questions.map((q, i) => (
         <div
           key={i}
-          className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-amber-50/60 dark:bg-amber-900/15 border border-amber-100/80 dark:border-amber-800/20"
+          className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-[#2e2a1e] border border-amber-200 dark:border-[#3e3a2e]"
         >
-          <span className="text-[11px] font-bold text-amber-300 dark:text-amber-400 mt-px shrink-0">?</span>
-          <span className="text-[12px] text-sage-600 dark:text-[#929292] leading-relaxed">{q}</span>
+          <span className="text-[12px] font-bold text-amber-600 dark:text-amber-400 mt-px shrink-0">?</span>
+          <span className="text-[12px] text-[#2d3219] dark:text-[#d4d4d4] font-medium leading-relaxed">{q}</span>
         </div>
       ))}
     </div>

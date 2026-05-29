@@ -6,7 +6,7 @@ import type { ClusterWithSummary } from '@/types';
 
 const TOPIC_ICONS: { bg: string; icon: React.ReactNode }[] = [
   {
-    bg: '#3b82f6',
+    bg: '#5a6332',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
   },
   {
@@ -27,7 +27,7 @@ const TOPIC_ICONS: { bg: string; icon: React.ReactNode }[] = [
   },
 ];
 
-const SPARK_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444'];
+const SPARK_COLORS = ['#22c55e', '#5a6332', '#f59e0b', '#8b5cf6', '#ef4444'];
 
 function RowSparkline({ seed, color }: { seed: number; color: string }) {
   const pts = Array.from({ length: 6 }, (_, i) =>
