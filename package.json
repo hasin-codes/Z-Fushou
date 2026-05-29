@@ -1,6 +1,6 @@
 {
   "name": "z-fushou",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "description": "Community intelligence platform by Z.ai. Real-time monitoring, sentiment analysis, and governance for Discord communities.",
   "author": "Hasin Raiyan <hasinraiyan.me>",
   "private": true,
@@ -44,7 +44,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
     "concurrently": "^9.2.1",
-    "electron": "^42.2.0",
+    "electron": "^42.3.0",
     "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "^16.2.6",

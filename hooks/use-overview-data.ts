@@ -36,6 +36,11 @@ export function useOverviewData(): OverviewData {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(() => {
+    // Wait until the topbar sets date params via URL.
+    // Without dates, edge functions return server-default data that
+    // causes a flash of wrong content on first load.
+    if (!from || !to) return;
+
     // All Edge Functions use `from`/`to` params.
     const kpiParams = new URLSearchParams();
     if (from) kpiParams.set('from', from);

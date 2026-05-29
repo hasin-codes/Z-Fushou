@@ -7,7 +7,6 @@ import { UserSentiment } from '@/components/overview/user-sentiment';
 import { HotTopics } from '@/components/overview/hot-topics';
 import { ConversationInsights } from '@/components/overview/conversation-insights';
 import { MobileHeader } from '@/components/overview/mobile-header';
-import { TodaysHighlights } from '@/components/overview/todays-highlights';
 import { MobileHotTopics } from '@/components/overview/mobile-hot-topics';
 import { MobileConversationInsights } from '@/components/overview/mobile-conversation-insights';
 import { useOverviewData } from '@/hooks/use-overview-data';
@@ -37,9 +36,6 @@ function OverviewContent() {
         <MobileHeader />
         <div className="px-4 sm:px-5">
           <KpiRow kpi={kpi} />
-        </div>
-        <div className="px-4 sm:px-5">
-          <TodaysHighlights />
         </div>
         <MobileHotTopics clusters={safeClusters} />
         <MobileConversationInsights clusters={safeClusters} />
@@ -74,6 +70,8 @@ function OverviewContent() {
                 totalSpeakers={totalSpeakers}
                 selectedHour={selectedHour}
                 onSelectHour={setSelectedHour}
+                kpiTotalMessages={kpi?.total_messages}
+                kpiActiveUsers={kpi?.active_users}
               />
             </div>
 

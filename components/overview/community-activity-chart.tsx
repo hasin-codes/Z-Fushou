@@ -9,6 +9,8 @@ interface CommunityActivityChartProps {
   totalSpeakers: number;
   selectedHour: number | null;
   onSelectHour: (hour: number | null) => void;
+  kpiTotalMessages?: number;
+  kpiActiveUsers?: number;
 }
 
 const WIDTH = 520;
@@ -40,6 +42,8 @@ export function CommunityActivityChart({
   totalSpeakers,
   selectedHour,
   onSelectHour,
+  kpiTotalMessages,
+  kpiActiveUsers,
 }: CommunityActivityChartProps) {
   const [hovered, setHovered] = useState<{
     hour: number;
@@ -116,7 +120,7 @@ export function CommunityActivityChart({
             Community Activity
           </h3>
           <p className="text-[11px] text-slate-400 dark:text-[#606060] mt-0.5">
-            {totalMessages.toLocaleString()} messages · {totalSpeakers.toLocaleString()} speakers
+            {(kpiTotalMessages ?? totalMessages).toLocaleString()} messages · {(kpiActiveUsers ?? totalSpeakers).toLocaleString()} speakers
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -377,7 +377,10 @@ export function WindowControlTopbar() {
         {/* Document Icon (Reader Mode / Documentation) */}
         <Tooltip delayDuration={150}>
           <TooltipTrigger asChild>
-            <button className="flex items-center justify-center size-8 rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all duration-200">
+            <button
+              onClick={() => window.open('https://zfushou.hasinraiyan.me/docs', '_blank')}
+              className="flex items-center justify-center size-8 rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-all duration-200"
+            >
               <FileText className="size-4.5" />
             </button>
           </TooltipTrigger>

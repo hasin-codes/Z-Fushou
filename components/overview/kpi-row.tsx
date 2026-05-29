@@ -157,7 +157,7 @@ const CARDS: KpiCardDef[] = [
     getDelta: kpi => kpi.total_clusters_delta,
   },
   {
-    label: 'Total Volume',
+    label: 'Total Message',
     color: '#f97316',
     bgColor: 'var(--kpi-orange-bg)',
     icon: IconVolume,
