@@ -1,7 +1,7 @@
 appId: com.zfushou.desktop
-productName: Z Fushou
-executableName: Z Fushou
-artifactName: Z Fushou-${version}-${arch}.${ext}
+productName: ZFushou
+executableName: ZFushou
+artifactName: ZFushou-${version}-${arch}.${ext}
 asar: true
 asarUnpack:
   - "**/*.node"
@@ -10,7 +10,7 @@ asarUnpack:
   - "build/icon.png"
   - "build/icon.ico"
 protocols:
-  name: Z Fushou
+  name: ZFushou
   schemes:
     - z-fushou
 directories:

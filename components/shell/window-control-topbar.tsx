@@ -235,11 +235,11 @@ export function WindowControlTopbar() {
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         className="flex items-center gap-3.5"
       >
-        {/* Z Fushou logo */}
+        {/* ZFushou logo */}
         <div className="flex items-center justify-center w-18 shrink-0">
           <Image
             src="/Logo.svg"
-            alt="Z Fushou"
+            alt="ZFushou"
             width={30}
             height={30}
             className="size-[30px] object-contain"
@@ -344,7 +344,7 @@ export function WindowControlTopbar() {
             priority
           />
           <span className="text-[11px] font-semibold tracking-tight text-white/90">
-            Fushou {process.env.NEXT_PUBLIC_APP_VERSION ?? ''}
+             ZFushou {process.env.NEXT_PUBLIC_APP_VERSION ?? ''}
           </span>
         </div>
       </div>

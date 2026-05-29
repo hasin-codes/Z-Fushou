@@ -68,7 +68,7 @@ export function LoginScreen() {
           {/* Logo */}
           <Image
             src="/Logo.svg"
-            alt="Z Fushou"
+            alt="ZFushou"
             width={72}
             height={72}
             className="size-32.5 object-contain"
@@ -77,7 +77,7 @@ export function LoginScreen() {
 
           {/* Welcome text */}
           <h1 className="text-[26px] font-semibold text-white tracking-tight text-center">
-            Welcome to Z Fushou
+            Welcome to ZFushou
           </h1>
 
           {/* Subtitle */}

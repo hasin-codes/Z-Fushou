@@ -14,7 +14,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Z Fushou",
+  title: "ZFushou",
   description: "Internal monitoring and governance tool",
   icons: {
     icon: [
