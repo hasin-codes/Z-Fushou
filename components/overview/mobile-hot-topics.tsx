@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { DashboardCard } from '@/components/shared/dashboard-card';
 import { useSidebarStore } from '@/stores/sidebar';
 import type { ClusterWithSummary } from '@/types';
 
@@ -72,15 +73,17 @@ export function MobileHotTopics({ clusters }: { clusters: ClusterWithSummary[] }
   );
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 mb-3 sm:px-5">
-        <h3 className="text-[16px] font-bold text-slate-800">Hot Topics</h3>
-        <button className="text-[13px] font-semibold text-slate-600">View all</button>
-      </div>
-
-      {/* Horizontal scroll */}
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide sm:px-5">
+    <DashboardCard
+      className="!h-auto"
+      header={
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <h3 className="text-[16px] font-bold text-slate-800 dark:text-[#E5E5E5]">Hot Topics</h3>
+          <button className="text-[13px] font-semibold text-slate-600 dark:text-[#929292]">View all</button>
+        </div>
+      }
+      contentClassName="!rounded-none"
+    >
+      <div className="flex gap-3 overflow-x-auto py-2 px-1 snap-x snap-mandatory scrollbar-hide">
         {sorted.map((c, idx) => {
           const iconDef = CLUSTER_ICONS[idx % CLUSTER_ICONS.length];
           const sparkColor = SPARK_COLORS[idx % SPARK_COLORS.length];
@@ -121,6 +124,6 @@ export function MobileHotTopics({ clusters }: { clusters: ClusterWithSummary[] }
           );
         })}
       </div>
-    </div>
+    </DashboardCard>
   );
 }

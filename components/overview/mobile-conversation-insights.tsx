@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { DashboardCard } from '@/components/shared/dashboard-card';
 import { useSidebarStore } from '@/stores/sidebar';
 import type { ClusterWithSummary } from '@/types';
 
@@ -53,71 +54,71 @@ export function MobileConversationInsights({ clusters }: { clusters: ClusterWith
   );
 
   return (
-    <div>
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden mx-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:mx-5">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4">
-          <h3 className="text-[16px] font-bold text-slate-800">Conversation Insights</h3>
-          <button className="text-[13px] font-semibold text-slate-600">See all</button>
+    <DashboardCard
+      className="!h-auto"
+      header={
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <h3 className="text-[16px] font-bold text-slate-800 dark:text-[#E5E5E5]">Conversation Insights</h3>
+          <button className="text-[13px] font-semibold text-slate-600 dark:text-[#929292]">See all</button>
         </div>
-
-        {/* Compact table header */}
-        <div className="hidden grid-cols-[minmax(0,1fr)_50px_50px_70px_40px] gap-1 px-4 pb-2 sm:grid">
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider" />
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Vol.</span>
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Users</span>
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Velocity</span>
-          <span />
-        </div>
-
-        {/* Rows */}
-        <div className="divide-y divide-slate-50">
-          {sorted.map((c, idx) => {
-            const iconDef = TOPIC_ICONS[idx % TOPIC_ICONS.length];
-            const sparkColor = SPARK_COLORS[idx % SPARK_COLORS.length];
-            return (
-              <div
-                key={`${c.cluster_id}-${c.processing_date}`}
-                onClick={() => openSidebar('cluster', c)}
-                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 items-center px-4 py-3 cursor-pointer active:bg-slate-50 sm:grid-cols-[minmax(0,1fr)_50px_50px_70px_40px] sm:gap-1"
-              >
-                {/* Label + Icon */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: iconDef.bg }}
-                  >
-                    {iconDef.icon}
-                  </div>
-                  <span className="text-[13px] font-semibold text-slate-800 truncate">
-                    {c.topic_label}
-                  </span>
-                </div>
-
-                {/* Volume */}
-                <span className="hidden text-[13px] font-bold text-slate-800 text-right tabular-nums sm:block">
-                  {c.message_count}
-                </span>
-
-                {/* Users */}
-                <span className="hidden text-[13px] font-bold text-slate-800 text-right tabular-nums sm:block">
-                  {c.unique_users}
-                </span>
-
-                {/* Velocity */}
-                <span className="col-start-1 ml-10 text-[12px] font-semibold text-slate-500 tabular-nums sm:col-auto sm:ml-0 sm:text-right">
-                  {c.messages_per_hour !== null ? `${c.messages_per_hour.toFixed(1)} /h` : '—'}
-                </span>
-
-                {/* Sparkline */}
-                <div className="row-span-2 flex justify-end self-center sm:row-span-1">
-                  <RowSparkline seed={c.cluster_id} color={sparkColor} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      }
+    >
+      {/* Compact table header */}
+      <div className="hidden grid-cols-[minmax(0,1fr)_50px_50px_70px_40px] gap-1 px-2 pb-1 pt-1 sm:grid">
+        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider" />
+        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Vol.</span>
+        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Users</span>
+        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-right">Velocity</span>
+        <span />
       </div>
-    </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-slate-100 dark:divide-[#2a2a2a]">
+        {sorted.map((c, idx) => {
+          const iconDef = TOPIC_ICONS[idx % TOPIC_ICONS.length];
+          const sparkColor = SPARK_COLORS[idx % SPARK_COLORS.length];
+          return (
+            <div
+              key={`${c.cluster_id}-${c.processing_date}`}
+              onClick={() => openSidebar('cluster', c)}
+              className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 items-center px-2 py-3 cursor-pointer active:bg-slate-50 dark:active:bg-[#2a2a2a] sm:grid-cols-[minmax(0,1fr)_50px_50px_70px_40px] sm:gap-1"
+            >
+              {/* Label + Icon */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: iconDef.bg }}
+                >
+                  {iconDef.icon}
+                </div>
+                <span className="text-[13px] font-semibold text-slate-800 dark:text-[#E5E5E5] truncate">
+                  {c.topic_label}
+                </span>
+              </div>
+
+              {/* Volume */}
+              <span className="hidden text-[13px] font-bold text-slate-800 dark:text-[#E5E5E5] text-right tabular-nums sm:block">
+                {c.message_count}
+              </span>
+
+              {/* Users */}
+              <span className="hidden text-[13px] font-bold text-slate-800 dark:text-[#E5E5E5] text-right tabular-nums sm:block">
+                {c.unique_users}
+              </span>
+
+              {/* Velocity */}
+              <span className="col-start-1 ml-10 text-[12px] font-semibold text-slate-500 dark:text-[#929292] tabular-nums sm:col-auto sm:ml-0 sm:text-right">
+                {c.messages_per_hour !== null ? `${c.messages_per_hour.toFixed(1)} /h` : '—'}
+              </span>
+
+              {/* Sparkline */}
+              <div className="row-span-2 flex justify-end self-center sm:row-span-1">
+                <RowSparkline seed={c.cluster_id} color={sparkColor} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </DashboardCard>
   );
 }

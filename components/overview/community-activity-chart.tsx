@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { DashboardCard } from '@/components/shared/dashboard-card';
 import type { HourlyActivity } from '../../types';
 
 interface CommunityActivityChartProps {
@@ -112,24 +113,27 @@ export function CommunityActivityChart({
   const hasData = hours.length > 0 && totalMessages > 0;
 
   return (
-    <div className="overview-card h-full flex flex-col bg-white dark:bg-[#262626] border border-slate-100 dark:border-[#3B3B3B] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden relative z-10">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-4">
-        <div>
-          <h3 className="text-[15px] font-bold text-[#2d3219] dark:text-[#E5E5E5]">
-            Community Activity
-          </h3>
-          <p className="text-[11px] text-slate-400 dark:text-[#606060] mt-0.5">
-            {(kpiTotalMessages ?? totalMessages).toLocaleString()} messages · {(kpiActiveUsers ?? totalSpeakers).toLocaleString()} speakers
-          </p>
+    <DashboardCard
+      className="overview-card"
+      header={
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div>
+            <h3 className="text-[15px] font-bold text-[#2d3219] dark:text-[#E5E5E5]">
+              Community Activity
+            </h3>
+            <p className="text-[11px] text-slate-400 dark:text-[#606060] mt-0.5">
+              {(kpiTotalMessages ?? totalMessages).toLocaleString()} messages · {(kpiActiveUsers ?? totalSpeakers).toLocaleString()} speakers
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#52EF4A]" />
+            <span className="text-[11px] text-slate-500 dark:text-[#606060] font-medium uppercase tracking-wider">
+              Activity
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#52EF4A]" />
-          <span className="text-[11px] text-slate-500 dark:text-[#606060] font-medium uppercase tracking-wider">
-            Activity
-          </span>
-        </div>
-      </div>
+      }
+    >
 
       <div className="relative flex-1 w-full min-h-0">
         {!hasData ? (
@@ -306,6 +310,6 @@ export function CommunityActivityChart({
           </div>
         )}
       </div>
-    </div>
+    </DashboardCard>
   );
 }

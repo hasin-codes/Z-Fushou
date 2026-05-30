@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { DashboardCard } from '@/components/shared/dashboard-card';
 import { MentionedMessages } from '@/components/overview/mentioned-messages';
 import type { MentionedMessage } from '@/types';
 
@@ -17,10 +18,9 @@ export function ConversationInsights({ mentions }: { mentions: MentionedMessage[
   const [mainTab, setMainTab] = useState<MainTab>('mentioned');
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white dark:bg-[#262626] border border-sage-100 dark:border-[#3B3B3B] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative z-10 overflow-hidden">
-      <Tabs value={mainTab} onValueChange={v => setMainTab(v as MainTab)} className="flex flex-col h-full">
-        {/* Header with main pill-style tabs */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-sage-100 dark:border-[#3B3B3B] shrink-0">
+    <DashboardCard
+      header={
+        <div className="flex items-center justify-between px-5 py-4 border-b border-sage-100 dark:border-[#3B3B3B]">
           <div className="flex items-center gap-1 bg-sage-100 dark:bg-[#2a2a2a] rounded-full p-1">
             {MAIN_TABS.map(t => (
               <button
@@ -39,7 +39,9 @@ export function ConversationInsights({ mentions }: { mentions: MentionedMessage[
             ))}
           </div>
         </div>
-
+      }
+    >
+      <Tabs value={mainTab} onValueChange={v => setMainTab(v as MainTab)} className="flex-1 min-h-0 flex flex-col">
         {/* Tab 1: Mentioned */}
         <TabsContent value="mentioned" className="flex-1 min-h-0 overflow-hidden">
           <MentionedMessages mentions={mentions} />
@@ -74,8 +76,7 @@ export function ConversationInsights({ mentions }: { mentions: MentionedMessage[
             <p className="text-[11px] text-sage-300 dark:text-[#606060]">Coming soon — data criteria to be defined</p>
           </div>
         </TabsContent>
-
       </Tabs>
-    </div>
+    </DashboardCard>
   );
 }

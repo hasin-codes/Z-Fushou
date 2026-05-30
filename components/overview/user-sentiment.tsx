@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Frown, Meh, Smile } from 'lucide-react';
+import { DashboardCard } from '@/components/shared/dashboard-card';
 import type { ClusterWithSummary, Sentiment } from '@/types';
 
 type EmotionConfig = {
@@ -97,20 +98,22 @@ export function UserSentiment({ clusters }: { clusters: ClusterWithSummary[] }) 
   };
 
   return (
-    <div className="overview-card h-full flex flex-col bg-white dark:bg-[#262626] border border-slate-100 dark:border-[#3B3B3B] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative z-10">
-      <div className="px-6 pt-6 pb-3 shrink-0 flex items-center justify-between">
-        <h3 className="text-[15px] font-bold text-[#2d3219] dark:text-[#E5E5E5]">User Sentiment</h3>
-        <div className="flex items-center gap-2 rounded-full bg-slate-50 dark:bg-[#3C3C3C] px-2 py-1">
-          <span className="text-[10px] font-semibold text-slate-400 dark:text-[#606060] uppercase tracking-wider">
-            Total
-          </span>
-          <span className="text-[12px] bg-white dark:bg-[#2B2B2B] text-slate-700 dark:text-[#E5E5E5] py-0.5 px-2.5 rounded-full font-bold shadow-sm ring-1 ring-slate-100 dark:ring-[#3B3B3B]">
-            {total.toLocaleString()}
-          </span>
+    <DashboardCard
+      header={
+        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+          <h3 className="text-[15px] font-bold text-[#2d3219] dark:text-[#E5E5E5]">User Sentiment</h3>
+          <div className="flex items-center gap-2 rounded-full bg-slate-50 dark:bg-[#3C3C3C] px-2 py-1">
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-[#606060] uppercase tracking-wider">
+              Total
+            </span>
+            <span className="text-[12px] bg-white dark:bg-[#2B2B2B] text-slate-700 dark:text-[#E5E5E5] py-0.5 px-2.5 rounded-full font-bold shadow-sm ring-1 ring-slate-100 dark:ring-[#3B3B3B]">
+              {total.toLocaleString()}
+            </span>
+          </div>
         </div>
-      </div>
-
-      <div className="relative flex-1 flex items-end justify-between px-6 pb-6 pt-2 gap-4 min-h-0">
+      }
+    >
+      <div className="relative flex-1 min-h-0 flex items-end justify-between px-2 pb-2 pt-8 gap-3">
         {emotions.map((emotion) => {
           const Icon = emotion.icon;
           const barHeight = getBarHeight(emotion.value);
@@ -158,6 +161,6 @@ export function UserSentiment({ clusters }: { clusters: ClusterWithSummary[] }) 
           );
         })}
       </div>
-    </div>
+    </DashboardCard>
   );
 }
