@@ -1,7 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { DashboardCard } from '@/components/shared/dashboard-card';
+import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
+import type { HeatmapDay } from '@/hooks/use-activity-heatmap';
 import type { HourlyActivity } from '../../types';
 
 interface CommunityActivityChartProps {
@@ -12,11 +16,18 @@ interface CommunityActivityChartProps {
   onSelectHour: (hour: number | null) => void;
   kpiTotalMessages?: number;
   kpiActiveUsers?: number;
+  heatmapDays: HeatmapDay[];
 }
 
 const WIDTH = 520;
 const HEIGHT = 240;
 const M = { top: 20, right: 20, bottom: 30, left: 40 };
+
+type TimeRange = '24h' | '7d';
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  '24h': '24 Hour',
+  '7d': '7 Days',
+};
 
 function smooth(pts: { x: number; y: number }[]): string {
   if (pts.length < 2) return '';
@@ -45,6 +56,7 @@ export function CommunityActivityChart({
   onSelectHour,
   kpiTotalMessages,
   kpiActiveUsers,
+  heatmapDays = [],
 }: CommunityActivityChartProps) {
   const [hovered, setHovered] = useState<{
     hour: number;
@@ -55,7 +67,12 @@ export function CommunityActivityChart({
     y: number;
   } | null>(null);
 
-  const { points, currentLine, areaPath, maxVal, yTicks } = useMemo(() => {
+  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+  const [timeRangeOpen, setTimeRangeOpen] = useState(false);
+
+  const isHeatmap = timeRange === '7d';
+
+  const { points, currentLine, areaPath, maxVal, yTicks, maxHour } = useMemo(() => {
     const hourly = Array.from({ length: 24 }, (_, h) => ({
       hour: h,
       label: formatHour(h),
@@ -70,7 +87,20 @@ export function CommunityActivityChart({
       }
     }
 
-    const rawMax = Math.max(...hourly.map(p => p.count), 10);
+    // Find the last hour with data — don't draw the line beyond reality
+    let maxHour = 23;
+    const nowParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Shanghai',
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(new Date());
+    const nowHour = parseInt(nowParts.find(p => p.type === 'hour')?.value ?? '23', 10);
+    maxHour = Math.min(nowHour, 23);
+
+    // Only include hours up to maxHour for the line/area
+    const visibleHourly = hourly.slice(0, maxHour + 1);
+
+    const rawMax = Math.max(...visibleHourly.map(p => p.count), 10);
     const max = rawMax + rawMax * 0.1;
 
     const yTicks = Array.from({ length: 5 }, (_, i) => Math.round((max / 4) * i));
@@ -78,6 +108,7 @@ export function CommunityActivityChart({
     const iw = WIDTH - M.left - M.right;
     const ih = HEIGHT - M.top - M.bottom;
 
+    // Use all 24 points for hover zones, but only visible points for the line
     const pts = hourly.map((p, i) => ({
       hour: p.hour,
       label: p.label,
@@ -87,10 +118,12 @@ export function CommunityActivityChart({
       y: M.top + ih - (p.count / max) * ih,
     }));
 
-    const curLine = smooth(pts.map(p => ({ x: p.x, y: p.y })));
+    const visiblePts = pts.slice(0, maxHour + 1);
+
+    const curLine = smooth(visiblePts.map(p => ({ x: p.x, y: p.y })));
     const area =
       curLine +
-      ` L ${pts[pts.length - 1].x} ${M.top + ih} L ${pts[0].x} ${M.top + ih} Z`;
+      ` L ${visiblePts[visiblePts.length - 1].x} ${M.top + ih} L ${visiblePts[0].x} ${M.top + ih} Z`;
 
     return {
       points: pts,
@@ -98,11 +131,13 @@ export function CommunityActivityChart({
       areaPath: area,
       maxVal: max,
       yTicks,
+      maxHour,
     };
   }, [hours]);
 
   const ih = HEIGHT - M.top - M.bottom;
-  const xTickHours = [0, 6, 12, 18, 23];
+  // X-axis ticks — only show hours up to the current hour
+  const xTickHours = [0, 6, 12, 18, 23].filter(h => h <= maxHour);
 
   const active =
     selectedHour !== null
@@ -111,6 +146,9 @@ export function CommunityActivityChart({
 
   // Empty state: show chart skeleton with no data line
   const hasData = hours.length > 0 && totalMessages > 0;
+
+  // Line draw animation — path length approximation for stroke-dasharray
+  const drawDuration = '1.2s';
 
   return (
     <DashboardCard
@@ -125,18 +163,42 @@ export function CommunityActivityChart({
               {(kpiTotalMessages ?? totalMessages).toLocaleString()} messages · {(kpiActiveUsers ?? totalSpeakers).toLocaleString()} speakers
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#52EF4A]" />
-            <span className="text-[11px] text-slate-500 dark:text-[#606060] font-medium uppercase tracking-wider">
-              Activity
-            </span>
+          <div className="relative">
+            <button
+              onClick={() => setTimeRangeOpen(prev => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#3C3C3C] border border-slate-200 dark:border-[#3B3B3B] text-[11px] font-medium text-slate-500 dark:text-[#929292] hover:bg-slate-50 dark:hover:bg-[#333] transition-colors"
+            >
+              {TIME_RANGE_LABELS[timeRange]}
+              <ChevronDown className={cn("w-3 h-3 transition-transform", timeRangeOpen && "rotate-180")} />
+            </button>
+            {timeRangeOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setTimeRangeOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 min-w-[100px] bg-white dark:bg-[#262626] border border-slate-200 dark:border-[#3B3B3B] rounded-xl shadow-lg overflow-hidden">
+                  {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => { setTimeRange(key); setTimeRangeOpen(false); }}
+                      className={cn(
+                        "w-full px-3 py-2 text-left text-[11px] font-medium transition-colors",
+                        timeRange === key ? "bg-[#5a6332] text-white" : "text-slate-600 dark:text-[#929292] hover:bg-slate-50 dark:hover:bg-[#333]"
+                      )}
+                    >
+                      {TIME_RANGE_LABELS[key]}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       }
     >
 
       <div className="relative flex-1 w-full min-h-0">
-        {!hasData ? (
+        {isHeatmap ? (
+          <ActivityHeatmap days={heatmapDays} />
+        ) : !hasData ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-[12px] text-slate-400 dark:text-[#606060]">No activity data for this period</p>
           </div>
@@ -151,6 +213,35 @@ export function CommunityActivityChart({
                 <stop offset="0%" stopColor="#52EF4A" stopOpacity="0.25" />
                 <stop offset="100%" stopColor="#52EF4A" stopOpacity="0.0" />
               </linearGradient>
+              {/* Line draw animation */}
+              <style>{`
+                @keyframes chart-draw {
+                  from { stroke-dashoffset: 2000; }
+                  to { stroke-dashoffset: 0; }
+                }
+                @keyframes chart-area-fade {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
+                @keyframes chart-points-fade {
+                  from { opacity: 0; transform: scale(0); }
+                  to { opacity: 1; transform: scale(1); }
+                }
+                .chart-line-draw {
+                  stroke-dasharray: 2000;
+                  stroke-dashoffset: 0;
+                  animation: chart-draw ${drawDuration} cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                }
+                .chart-area-fade {
+                  opacity: 1;
+                  animation: chart-area-fade 0.8s 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+                }
+                .chart-points-fade {
+                  opacity: 1;
+                  animation: chart-points-fade 0.4s 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+                  transform-origin: center;
+                }
+              `}</style>
             </defs>
 
             {/* Y-axis grid lines + labels */}
@@ -197,7 +288,7 @@ export function CommunityActivityChart({
             })}
 
             {/* Area fill */}
-            <path d={areaPath} fill="url(#vol-fill)" />
+            <path d={areaPath} fill="url(#vol-fill)" className="chart-area-fade" />
 
             {/* Solid line with glow */}
             <path
@@ -209,6 +300,7 @@ export function CommunityActivityChart({
               strokeLinejoin="round"
               opacity="0.2"
               style={{ filter: 'blur(3px)' }}
+              className="chart-line-draw"
             />
             <path
               d={currentLine}
@@ -217,6 +309,7 @@ export function CommunityActivityChart({
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="chart-line-draw"
             />
 
             {/* Data points */}
@@ -228,7 +321,7 @@ export function CommunityActivityChart({
                   cx={p.x}
                   cy={p.y}
                   r="3.5"
-                  className="fill-white dark:fill-[#262626]"
+                  className="fill-white dark:fill-[#262626] chart-points-fade"
                   stroke="#52EF4A"
                   strokeWidth="2"
                 />

@@ -20,6 +20,7 @@ function OverviewContent() {
     hours,
     totalMessages,
     totalSpeakers,
+    heatmapDays,
     loading,
   } = useOverviewData();
 
@@ -74,6 +75,7 @@ function OverviewContent() {
                 onSelectHour={setSelectedHour}
                 kpiTotalMessages={kpi?.total_messages}
                 kpiActiveUsers={kpi?.active_users}
+                heatmapDays={heatmapDays}
               />
             </div>
 

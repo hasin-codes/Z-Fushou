@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Minus, X } from 'lucide-react';
+import { Minus, X, AlertCircle, XCircle } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import ColorBends from '@/components/ColorBends';
 
@@ -124,7 +124,18 @@ export function LoginScreen() {
 
           {/* Error message */}
           {error && (
-            <p className="text-xs text-critical text-center">{error}</p>
+            <div className="w-full mt-2 flex items-start gap-3 bg-red-500/15 border border-red-400/25 rounded-xl px-4 py-3 animate-enter">
+              <AlertCircle className="size-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] text-red-200 leading-snug">{error}</p>
+              </div>
+              <button
+                onClick={() => useAuthStore.getState().setError(null)}
+                className="shrink-0 mt-0.5 text-red-400/60 hover:text-red-300 transition-colors"
+              >
+                <XCircle className="size-4" />
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth';
 import { LoginScreen } from './login-screen';
+import ColorBends from '@/components/ColorBends';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { authState, init, handleToken } = useAuthStore();
@@ -44,11 +46,41 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [authState]);
 
-  // Loading state — spinner while checking stored token
+  // Loading state — greeting screen while checking stored token
   if (authState === 'loading') {
     return (
-      <div className="flex items-center justify-center h-dvh bg-[#0f0f0f]">
-        <div className="h-8 w-8 rounded-full border-2 border-[#75F755]/30 border-t-[#75F755] animate-spin" />
+      <div className="flex items-center justify-center h-dvh relative">
+        <div className="absolute inset-0 z-0">
+          <ColorBends
+            colors={['#75F755']}
+            speed={0.2}
+            frequency={1.0}
+            noise={0.08}
+            bandWidth={1}
+            rotation={90}
+            scale={1}
+            iterations={2}
+            intensity={2}
+            transparent={false}
+          />
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-5 animate-enter">
+          <Image
+            src="/Logo.svg"
+            alt="ZFushou"
+            width={80}
+            height={80}
+            className="size-20 object-contain"
+            priority
+          />
+          <p className="text-[14px] font-medium text-white/60 tracking-wide uppercase">
+            Hello there
+          </p>
+          <h1 className="text-[28px] font-semibold text-white tracking-tight">
+            Welcome Back to ZFushou
+          </h1>
+          <div className="mt-3 h-1 w-12 rounded-full bg-white/25 animate-shimmer" />
+        </div>
       </div>
     );
   }

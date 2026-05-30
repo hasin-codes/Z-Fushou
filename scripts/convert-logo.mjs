@@ -5,6 +5,7 @@ import sharp from 'sharp'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
+const colorfulLogoSvgPath = join(root, 'public', 'Z Fushou Logo', 'Colorful Logo - Black BG.svg')
 const logoSvgPath = join(root, 'public', 'Logo.svg')
 const mainLogoSvgPath = join(root, 'public', 'MainLogo.svg')
 const pngMax = { quality: 100, compressionLevel: 0, effort: 10, palette: false }
@@ -55,15 +56,15 @@ async function convertLogo() {
   const faviconSizes = [16, 32, 48, 256]
 
   const appIconBuffers = await Promise.all(
-    appIconSizes.map((size) => renderSvgToBuffer(mainLogoSvgPath, size))
+    appIconSizes.map((size) => renderSvgToBuffer(colorfulLogoSvgPath, size))
   )
   writeFileSync(join(root, 'build', 'icon.ico'), makeIco(appIconSizes, appIconBuffers))
-  console.log('Created build/icon.ico from MainLogo.svg')
+  console.log('Created build/icon.ico from Colorful Logo - Black BG.svg')
 
-  await sharp(await renderSvgToBuffer(mainLogoSvgPath, 1024))
+  await sharp(await renderSvgToBuffer(colorfulLogoSvgPath, 1024))
     .png(pngMax)
     .toFile(join(root, 'build', 'icon.png'))
-  console.log('Created build/icon.png from MainLogo.svg')
+  console.log('Created build/icon.png from Colorful Logo - Black BG.svg')
 
     await sharp(await renderSvgToBuffer(logoSvgPath, 1024))
     .png(pngMax)

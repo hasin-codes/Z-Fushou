@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { addDays, beijingTodayKey } from '@/lib/date-ranges';
+import { addDays, beijingTodayKey, beijingHourFromUtc, utcBoundsForBeijingDate } from '@/lib/date-ranges';
 import { edgeGet } from '@/lib/edge-fetch';
 import { normalizeEdgeKpi, normalizeEdgeClusters, normalizeEdgeMentions, normalizeEdgeActivity } from '@/lib/edge-normalize';
+import type { HeatmapDay } from './use-activity-heatmap';
 import type { KpiData, ClusterWithSummary, HourlyActivity, MentionedMessage } from '../types';
 
 interface OverviewData {
@@ -14,12 +15,83 @@ interface OverviewData {
   hours: HourlyActivity[];
   totalMessages: number;
   totalSpeakers: number;
+  heatmapDays: HeatmapDay[];
   loading: boolean;
   refetch: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyJson = Record<string, any>;
+
+// ── Heatmap day normalization helpers ──
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function getDayShort(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return DAY_NAMES[new Date(y, m - 1, d).getDay()];
+}
+
+function getDayFull(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return DAY_FULL[new Date(y, m - 1, d).getDay()];
+}
+
+function currentBeijingHour(): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Shanghai',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(new Date());
+  const hourStr = parts.find(p => p.type === 'hour')?.value ?? '0';
+  return parseInt(hourStr, 10);
+}
+
+async function fetchHeatmapDays(): Promise<HeatmapDay[]> {
+  const todayKey = beijingTodayKey();
+  const nowHour = currentBeijingHour();
+  const dayKeys: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    dayKeys.push(addDays(todayKey, -i));
+  }
+
+  const results: HeatmapDay[] = [];
+
+  for (const dayKey of dayKeys) {
+    const isToday = dayKey === todayKey;
+    try {
+      // Use UTC-bounded timestamps so the backend covers the full Beijing day.
+      // Bare dates expand to UTC midnight, which misses Beijing hours 0-7 (UTC+8).
+      const { start, end } = utcBoundsForBeijingDate(dayKey);
+      const raw = await edgeGet<AnyJson>(`activity?from=${start}&to=${end}`);
+      const data = raw?.ok && raw?.data !== undefined ? raw.data : raw;
+      const rawHours: { hour: string; message_count: number }[] = data?.hours ?? [];
+
+      const hours = new Array(24).fill(0) as number[];
+      for (const h of rawHours) {
+        // hour is always an ISO string — convert to Beijing hour
+        const hourNum = beijingHourFromUtc(h.hour);
+        if (hourNum >= 0 && hourNum < 24) {
+          hours[hourNum] += h.message_count || 0;
+        }
+      }
+
+      // Clip future hours for today's row
+      if (isToday) {
+        for (let h = nowHour + 1; h < 24; h++) {
+          hours[h] = 0;
+        }
+      }
+
+      results.push({ date: dayKey, dayLabel: getDayFull(dayKey), dayShort: getDayShort(dayKey), hours });
+    } catch {
+      results.push({ date: dayKey, dayLabel: getDayFull(dayKey), dayShort: getDayShort(dayKey), hours: new Array(24).fill(0) as number[] });
+    }
+  }
+
+  return results;
+}
 
 export function useOverviewData(): OverviewData {
   const searchParams = useSearchParams();
@@ -33,6 +105,7 @@ export function useOverviewData(): OverviewData {
   const [hours, setHours] = useState<HourlyActivity[]>([]);
   const [totalMessages, setTotalMessages] = useState(0);
   const [totalSpeakers, setTotalSpeakers] = useState(0);
+  const [heatmapDays, setHeatmapDays] = useState<HeatmapDay[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(() => {
@@ -80,8 +153,9 @@ export function useOverviewData(): OverviewData {
       edgeGet<unknown>(`clusters?${clusterParams}`).then(normalizeEdgeClusters),
       edgeGet<unknown>(`activity?${activityParams}`).then(normalizeEdgeActivity),
       edgeGet<unknown>(`mentions?${mentionsParams}`).then(normalizeEdgeMentions),
+      fetchHeatmapDays(),
     ])
-      .then(([kpiResult, clustersResult, activityResult, mentionsResult]) => {
+      .then(([kpiResult, clustersResult, activityResult, mentionsResult, heatmapResult]) => {
         // KPI
         if (kpiResult.status === 'fulfilled') {
           setKpi(kpiResult.value);
@@ -118,6 +192,14 @@ export function useOverviewData(): OverviewData {
           console.error('Mentions fetch failed:', mentionsResult.reason);
           setMentions([]);
         }
+
+        // Heatmap (7-day)
+        if (heatmapResult.status === 'fulfilled') {
+          setHeatmapDays(heatmapResult.value);
+        } else {
+          console.error('Heatmap fetch failed:', heatmapResult.reason);
+          setHeatmapDays([]);
+        }
       })
       .finally(() => {
         setLoading(false);
@@ -141,6 +223,7 @@ export function useOverviewData(): OverviewData {
     hours,
     totalMessages,
     totalSpeakers,
+    heatmapDays,
     loading,
     refetch: fetchData,
   };

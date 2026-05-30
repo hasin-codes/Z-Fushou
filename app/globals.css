@@ -468,16 +468,44 @@ html.dark .cluster-feed-row:hover {
 }
 
 @keyframes shimmer {
-  0%, 100% {
+  0% {
     opacity: 0.15;
+    filter: brightness(1);
+  }
+  40% {
+    opacity: 0.35;
+    filter: brightness(1.3);
   }
   50% {
-    opacity: 0.4;
+    opacity: 0.5;
+    filter: brightness(1.8);
+  }
+  60% {
+    opacity: 0.35;
+    filter: brightness(1.3);
+  }
+  100% {
+    opacity: 0.15;
+    filter: brightness(1);
   }
 }
 
 .animate-shimmer {
   animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Loader bar — slides left to right continuously */
+@keyframes loader-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-loader-bar {
+  animation: loader-bar 1.4s ease-in-out infinite;
 }
 
 /* Cluster feed row — staggered entry + hover, no inline animation to avoid React shorthand conflicts */

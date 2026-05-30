@@ -22,8 +22,16 @@ export async function deleteStoredToken(): Promise<void> {
   return window.desktopAuth.deleteToken();
 }
 
+export type AuthErrorKind =
+  | 'expired'       // 401 — token/session expired
+  | 'forbidden'     // 403 — user lacks permission
+  | 'server'        // 5xx — server-side error
+  | 'network'       // fetch threw (offline, DNS, timeout)
+  | 'invalid';      // generic invalid response
+
 export type VerificationResult = {
   valid: boolean;
+  errorKind?: AuthErrorKind;
   isNetworkError?: boolean;
 };
 
@@ -40,7 +48,16 @@ export async function verifyToken(token: string): Promise<VerificationResult> {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       console.error('[desktop-auth] verify failed — status:', res.status, 'body:', text);
-      return { valid: false, isNetworkError: false };
+      if (res.status === 401) {
+        return { valid: false, errorKind: 'expired' };
+      }
+      if (res.status === 403) {
+        return { valid: false, errorKind: 'forbidden' };
+      }
+      if (res.status >= 500) {
+        return { valid: false, errorKind: 'server' };
+      }
+      return { valid: false, errorKind: 'invalid' };
     }
     const text = await res.text();
     console.log('[desktop-auth] verify RAW body:', text);
@@ -49,13 +66,13 @@ export async function verifyToken(token: string): Promise<VerificationResult> {
       data = JSON.parse(text);
     } catch {
       console.error('[desktop-auth] verify response is not valid JSON');
-      return { valid: false, isNetworkError: false };
+      return { valid: false, errorKind: 'invalid' };
     }
     console.log('[desktop-auth] verify PARSED:', JSON.stringify(data));
-    return { valid: data.ok === true || data.valid === true, isNetworkError: false };
+    return { valid: data.ok === true || data.valid === true, errorKind: undefined };
   } catch (err) {
     console.error('[desktop-auth] verify threw:', err);
-    return { valid: false, isNetworkError: true };
+    return { valid: false, errorKind: 'network', isNetworkError: true };
   }
 }
 

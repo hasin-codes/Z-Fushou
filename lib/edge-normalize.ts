@@ -21,6 +21,7 @@
  */
 
 import type { KpiData, ClusterWithSummary, HourlyActivity } from '@/types';
+import { beijingTodayKey, beijingHourFromUtc } from '@/lib/date-ranges';
 
 // ── KPI ──────────────────────────────────────────────────────────────────
 
@@ -233,21 +234,30 @@ export interface NormalizedActivity {
   totalSpeakers: number;
 }
 
+/**
+ * Returns the current hour (0-23) in Beijing timezone.
+ */
+function currentBeijingHour(): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Shanghai',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(new Date());
+  const hourStr = parts.find(p => p.type === 'hour')?.value ?? '0';
+  return parseInt(hourStr, 10);
+}
+
 function normalizeHoursArray(raw: unknown): HourlyActivity[] {
   if (!Array.isArray(raw)) return [];
 
   const parsed = raw
     .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
     .map((item) => {
-      let hourNum = 0;
+      // hour is always an ISO 8601 UTC timestamp — convert to Beijing hour
+      let hourNum = -1;
       const hourVal = item.hour;
       if (typeof hourVal === 'string') {
-        const d = new Date(hourVal);
-        if (Number.isFinite(d.getTime())) {
-          hourNum = d.getUTCHours();
-        }
-      } else if (typeof hourVal === 'number') {
-        hourNum = hourVal;
+        hourNum = beijingHourFromUtc(hourVal);
       }
 
       return {
@@ -273,14 +283,18 @@ function normalizeHoursArray(raw: unknown): HourlyActivity[] {
     }
   }
 
-  // Return as sorted array of 24 HourlyActivity entries
+  // Return as sorted array of 24 HourlyActivity entries.
+  // Clip hours beyond the current Beijing hour — future hours that haven't
+  // happened yet must be 0 to avoid showing data from previous days' same hour.
+  const nowHour = currentBeijingHour();
   const result: HourlyActivity[] = [];
   for (let h = 0; h < 24; h++) {
     const bucket = buckets.get(h);
+    const isFuture = h > nowHour;
     result.push({
       hour: h,
-      message_count: bucket?.message_count ?? 0,
-      speaker_count: bucket?.speaker_count ?? 0,
+      message_count: isFuture ? 0 : (bucket?.message_count ?? 0),
+      speaker_count: isFuture ? 0 : (bucket?.speaker_count ?? 0),
     });
   }
 
@@ -297,7 +311,12 @@ export function normalizeEdgeActivity(raw: unknown): NormalizedActivity {
   const hours = normalizeHoursArray(rawHours);
 
   const totalMessages = hours.reduce((sum, item) => sum + item.message_count, 0);
-  const totalSpeakers = hours.reduce((sum, item) => sum + item.speaker_count, 0);
+
+  // Use the edge function's total_unique_users (truly deduplicated) when available.
+  // Fallback to summing hourly speaker_count (may double-count across hours).
+  const totalSpeakers = typeof data.total_unique_users === 'number'
+    ? data.total_unique_users
+    : hours.reduce((sum, item) => sum + item.speaker_count, 0);
 
   return { hours, totalMessages, totalSpeakers };
 }
