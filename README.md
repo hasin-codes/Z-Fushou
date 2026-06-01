@@ -1,6 +1,6 @@
-# Z Fushou
+# ZFushou
 
-Community intelligence platform by [Z.ai](https://z.ai). Real-time monitoring, sentiment analysis, and governance for Discord communities — delivered as a native desktop application.
+Community intelligence platform by [Z.ai](https://z.ai). Real-time monitoring, sentiment analysis, and governance for Discord communities — delivered as a native desktop application with auto-updates.
 
 **Author:** Hasin Raiyan — [hasinraiyan.me](https://hasinraiyan.me)
 
@@ -15,10 +15,12 @@ Community intelligence platform by [Z.ai](https://z.ai). Real-time monitoring, s
 - [Project Structure](#project-structure)
 - [Electron Layer](#electron-layer)
 - [Authentication](#authentication)
-- [Dashboard & Features](#dashboard--features)
+- [Pages & Features](#pages--features)
+- [Data Caching Layer](#data-caching-layer)
 - [State Management](#state-management)
 - [Environment Variables](#environment-variables)
 - [Building & Packaging](#building--packaging)
+- [Auto-Updates](#auto-updates)
 - [CI/CD (GitHub Actions)](#cicd-github-actions)
 - [Scripts](#scripts)
 - [License](#license)
@@ -27,16 +29,16 @@ Community intelligence platform by [Z.ai](https://z.ai). Real-time monitoring, s
 
 ## Overview
 
-Z Fushou is a cross-platform desktop app (Windows + macOS) that provides real-time insights into community conversations. It aggregates data from Supabase Edge Functions to display:
+ZFushou is a cross-platform desktop app (Windows + macOS) that provides real-time insights into community conversations. It aggregates data from Supabase Edge Functions and presents:
 
 - **KPI metrics** — message volume, active users, cluster counts with trend deltas
-- **Community activity** — hourly activity breakdown with bar/line charts
+- **Activity chart & heatmap** — hourly activity breakdown with bar/line charts plus a 7-day activity heatmap
 - **Hot topics** — conversation clusters ranked by severity and sentiment
-- **Conversation insights** — drill-down into mentioned messages and context
+- **Conversation insights** — drill-down into mentioned messages with context
+- **Mentioned page** — dedicated view of all monitored `@` mentions across all dates
 - **User sentiment** — frustration, confusion, neutral, and positive breakdowns
-- **Today's highlights** — summary of the most important activity
 
-The app includes an embedded Discord sidebar for direct community access, a command palette for quick search, and full dark/light theme support.
+The app includes an embedded Discord sidebar for direct community access, a command palette for quick search, full dark/light theme support, and automatic background updates via `electron-updater`.
 
 ---
 
@@ -48,6 +50,7 @@ The app includes an embedded Discord sidebar for direct community access, a comm
 | **UI** | React | 19.x |
 | **Desktop** | Electron | 42.x |
 | **Packaging** | electron-builder | 26.x |
+| **Auto-Update** | electron-updater | 6.x |
 | **Language** | TypeScript | 5.x |
 | **Styling** | Tailwind CSS v4 | 4.x |
 | **Components** | shadcn/ui + Radix UI | 4.x / 1.x |
@@ -72,7 +75,8 @@ The app includes an embedded Discord sidebar for direct community access, a comm
 │                    Electron Shell                        │
 │  ┌─────────────────────────────────────────────────────┐│
 │  │  main.js — frameless window, IPC, deep links,      ││
-│  │  keytar auth, Discord WebContentsView               ││
+│  │  keytar auth, Discord WebContentsView,              ││
+│  │  electron-updater (auto-update from GitHub)         ││
 │  └──────────────────────┬──────────────────────────────┘│
 │                         │ preload.js (contextBridge)     │
 │  ┌──────────────────────▼──────────────────────────────┐│
@@ -80,9 +84,12 @@ The app includes an embedded Discord sidebar for direct community access, a comm
 │  │  ┌────────────────────────────────────────────────┐ ││
 │  │  │  React Dashboard (App Router)                  │ ││
 │  │  │  ┌──────────┐ ┌──────────┐ ┌───────────────┐  │ ││
-│  │  │  │ Shell    │ │ Overview │ │ Search        │  │ ││
-│  │  │  │ Layout   │ │ Dashboard│ │ Command (⌘K)  │  │ ││
-│  │  │  └──────────┘ └──────────┘ └───────────────┘  │ ││
+│  │  │  │ Shell    │ │ Overview │ │ Mentioned     │  │ ││
+│  │  │  │ Layout   │ │ Dashboard│ │ Page (@)      │  │ ││
+│  │  │  ├──────────┤ └──────────┘ └───────────────┘  │ ││
+│  │  │  │ Search   │                                   │ ││
+│  │  │  │ ⌘K       │                                   │ ││
+│  │  │  └──────────┘                                   │ ││
 │  │  └────────────────────────────────────────────────┘ ││
 │  └─────────────────────────────────────────────────────┘│
 │                                                         │
@@ -151,67 +158,78 @@ npm run electron:dev
 
 ```
 ├── .github/workflows/
-│   └── release.yml              # CI: build EXE + DMG on tag push
+│   └── release.yml                # CI: build EXE + DMG on tag push
 ├── app/
-│   ├── globals.css              # Tailwind v4 theme, CSS variables
-│   ├── layout.tsx               # Root layout, font, providers
-│   ├── page.tsx                 # Overview dashboard page
+│   ├── globals.css                # Tailwind v4 theme, CSS variables
+│   ├── layout.tsx                 # Root layout, font, providers
+│   ├── page.tsx                   # Overview dashboard page
+│   ├── mentioned/
+│   │   └── page.tsx               # Mentioned messages page (@ mentions)
 │   └── favicon.ico
 ├── components/
 │   ├── auth/
-│   │   ├── auth-gate.tsx        # Auth wrapper (loading → login → app)
-│   │   └── login-screen.tsx     # Login UI with Discord OAuth
+│   │   ├── auth-gate.tsx          # Auth wrapper (loading → login → app)
+│   │   └── login-screen.tsx       # Login UI with Discord OAuth
 │   ├── overview/
-│   │   ├── kpi-row.tsx          # KPI metric cards
-│   │   ├── community-activity-chart.tsx  # Hourly activity chart
-│   │   ├── hot-topics.tsx       # Topic cluster list
+│   │   ├── kpi-row.tsx            # KPI metric cards
+│   │   ├── community-activity-chart.tsx  # Hourly activity chart + heatmap
+│   │   ├── activity-heatmap.tsx   # 7-day × 24-hour activity heatmap
+│   │   ├── hot-topics.tsx         # Topic cluster list
 │   │   ├── conversation-insights.tsx     # Message drill-down
-│   │   ├── user-sentiment.tsx   # Sentiment breakdown
-│   │   ├── todays-highlights.tsx         # Daily highlights
-│   │   ├── mentioned-messages.tsx        # Mention cards
-│   │   ├── mobile-*.tsx         # Mobile layout variants
+│   │   ├── user-sentiment.tsx     # Sentiment breakdown
+│   │   ├── mentioned-messages.tsx        # Mention cards (overview context)
+│   │   ├── mobile-header.tsx      # Mobile top header
+│   │   ├── mobile-hot-topics.tsx  # Mobile topic cards
+│   │   ├── mobile-conversation-insights.tsx  # Mobile insights cards
 │   │   └── ...
+│   ├── mentioned/
+│   │   └── mentioned-table.tsx    # Dedicated mentions table (@ page)
 │   ├── shell/
-│   │   ├── shell-layout.tsx     # Main layout shell
-│   │   ├── window-control-topbar.tsx     # Custom title bar
-│   │   ├── left-nav.tsx         # Icon sidebar
-│   │   ├── bottom-nav.tsx       # Mobile bottom navigation
-│   │   ├── right-sidebar.tsx    # Detail panel (cluster/message/user)
-│   │   ├── discord-sidebar.tsx  # Embedded Discord panel
-│   │   └── top-nav.tsx          # Floating tab bar
+│   │   ├── shell-layout.tsx       # Main layout shell, startup pre-fetch
+│   │   ├── window-control-topbar.tsx  # Custom title bar
+│   │   ├── left-nav.tsx           # Icon sidebar (Overview, Mentioned, Changelog)
+│   │   ├── bottom-nav.tsx         # Mobile bottom navigation
+│   │   ├── right-sidebar.tsx      # Detail panel (cluster/message/user)
+│   │   ├── discord-sidebar.tsx    # Embedded Discord panel
+│   │   └── top-nav.tsx            # Floating tab bar
 │   ├── shared/
-│   │   ├── search-command.tsx   # ⌘K command palette
-│   │   ├── theme-sync.tsx       # Dark/light class sync
-│   │   ├── sentiment-badge.tsx  # Sentiment label badge
-│   │   ├── severity-pill.tsx    # Severity indicator
-│   │   └── duration-bar.tsx     # Visual duration bar
-│   ├── ui/                      # shadcn/ui components (18 files)
-│   └── ColorBends.tsx           # Three.js animated login background
+│   │   ├── dashboard-card.tsx     # Two-layer surface card for widgets
+│   │   ├── dashboard-loader.tsx   # Skeleton loader matching bento grid
+│   │   ├── search-command.tsx     # ⌘K command palette
+│   │   ├── theme-sync.tsx         # Dark/light class sync
+│   │   ├── sentiment-badge.tsx    # Sentiment label badge
+│   │   ├── severity-pill.tsx      # Severity indicator
+│   │   └── duration-bar.tsx       # Visual duration bar
+│   ├── ui/                        # shadcn/ui components
+│   └── ColorBends.tsx             # Three.js animated login background
 ├── hooks/
-│   └── use-overview-data.ts     # Dashboard data fetching hook
+│   ├── use-overview-data.ts       # Overview data fetching with cache integration
+│   ├── use-mentions-data.ts       # Dedicated mentions fetch with cache
+│   └── use-activity-heatmap.ts    # 7-day heatmap data fetcher
 ├── lib/
-│   ├── utils.ts                 # cn(), formatters, helpers
-│   ├── date-ranges.ts           # Beijing timezone date utilities
-│   ├── desktop-auth.ts          # Desktop auth abstraction
-│   ├── edge-fetch.ts            # Supabase Edge Function HTTP client
-│   └── edge-normalize.ts        # Response normalization layer
+│   ├── utils.ts                   # cn(), formatters, helpers
+│   ├── date-ranges.ts             # Beijing timezone date utilities, UTC bounds
+│   ├── desktop-auth.ts            # Desktop auth abstraction
+│   ├── edge-fetch.ts              # Supabase Edge Function HTTP client
+│   └── edge-normalize.ts          # Response normalization layer
 ├── stores/
-│   ├── auth.ts                  # Auth lifecycle (Zustand)
-│   ├── theme.ts                 # Dark/light toggle
-│   ├── discord-sidebar.ts       # Discord panel state
-│   └── sidebar.ts               # Right sidebar detail panel
+│   ├── data-cache.ts              # Zustand in-memory data cache (TTL-based)
+│   ├── auth.ts                    # Auth lifecycle (Zustand)
+│   ├── theme.ts                   # Dark/light toggle
+│   ├── discord-sidebar.ts         # Discord panel state
+│   └── sidebar.ts                 # Right sidebar detail panel
 ├── types/
-│   ├── index.ts                 # Domain types (Cluster, Message, KPI, etc.)
-│   └── electron.d.ts            # Preload bridge type declarations
+│   ├── index.ts                   # Domain types (Cluster, Message, KPI, etc.)
+│   └── electron.d.ts              # Preload bridge type declarations
 ├── scripts/
-│   ├── prepare-standalone.mjs   # Copy static assets into standalone output
-│   └── convert-logo.mjs         # SVG → ICO/PNG conversion via sharp
-├── public/                      # Static assets, brand logos
-├── build/                       # electron-builder resources (icons)
-├── main.js                      # Electron main process
-├── preload.js                   # Electron preload (contextBridge)
-├── next.config.ts               # Next.js config + env injection
-├── electron-builder.yml         # Electron-builder packaging config
+│   ├── prepare-standalone.mjs     # Copy static assets into standalone output
+│   └── convert-logo.mjs           # SVG → ICO/PNG conversion via sharp
+├── public/                        # Static assets, brand logos
+├── build/                         # electron-builder resources (icons)
+├── main.js                        # Electron main process
+├── preload.js                     # Electron preload (contextBridge)
+├── next.config.ts                 # Next.js config + env injection
+├── electron-builder.yml           # Electron-builder packaging config
 ├── package.json
 ├── .env.example
 └── .gitignore
@@ -228,18 +246,20 @@ npm run electron:dev
 - **Single instance lock** — Second launches forward deep links to the running instance
 - **Standalone server** — Production mode forks `.next/standalone/server.js` on a random port
 - **Discord sidebar** — Separate `WebContentsView` with mobile-emulated Discord (430px, spoofed iPhone UA)
-- **Window modes** — Login mode (small, locked 1000x650) and dashboard mode (resizable 1440x920)
+- **Window modes** — Login mode (small, locked 1000×650) and dashboard mode (resizable 1440×920)
 - **Keychain auth** — Tokens stored in OS keychain via `keytar` (Windows Credential Vault / macOS Keychain)
+- **Auto-updater** — `electron-updater` checks GitHub Releases for updates, auto-downloads, and prompts to restart
 
 ### Preload (`preload.js`)
 
-Exposes three namespaced bridges via `contextBridge`:
+Exposes four namespaced bridges via `contextBridge`:
 
 | Bridge | Methods |
 |---|---|
-| `window.discordSidebar` | `open()`, `close()`, `setBounds()`, `onCloseRequest()`, `onRefreshBounds()` |
+| `window.discordSidebar` | `open()`, `close()`, `setBounds()`, `onCloseRequest()`, `offCloseRequest()`, `onRefreshBounds()`, `offRefreshBounds()` |
 | `window.windowControls` | `minimize()`, `maximize()`, `close()`, `zoomIn()`, `zoomOut()`, `zoomReset()`, `getZoomFactor()`, `enterLoginMode()`, `exitLoginMode()` |
-| `window.desktopAuth` | `saveToken()`, `readToken()`, `deleteToken()`, `openLoginPage()`, `onDeepLinkToken()` |
+| `window.desktopAuth` | `saveToken()`, `readToken()`, `deleteToken()`, `openLoginPage()`, `onDeepLinkToken()`, `offDeepLinkToken()` |
+| `window.updater` | `restart()`, `onUpdateAvailable()`, `offUpdateAvailable()` |
 
 ---
 
@@ -273,33 +293,93 @@ Custom token-based auth flow (no Supabase client-side auth):
 
 ---
 
-## Dashboard & Features
+## Pages & Features
 
-### Layout
+### Overview Dashboard (`/`)
 
-The shell provides a responsive layout with two modes:
+The main dashboard uses a **bento grid layout** (15 columns) that adapts between desktop and mobile views.
 
-**Desktop** — Window control topbar, icon sidebar (left), main content area with optional Discord sidebar (right), detail panel overlay, and a command palette.
+**Desktop grid:**
 
-**Mobile** — Mobile header, full-width cards, bottom tab navigation.
+| Row | Columns | Component |
+|---|---|---|
+| 1 | 1–10 | KPI Cards (6 metrics in a row) |
+| 1–2 | 11–15 | Hot Topics (spans 2 rows) |
+| 2 | 1–6 | Community Activity Chart + Heatmap |
+| 2 | 7–10 | User Sentiment |
+| 3 | 1–15 | Conversation Insights (full width, internal scroll) |
 
-### Key Features
+**Mobile layout** — stacked cards with bottom tab navigation.
 
 | Feature | Description |
 |---|---|
-| **KPI Cards** | Message count, active users, cluster count with trend deltas |
-| **Community Activity Chart** | Hourly breakdown of messages and speakers with bar/line visualization |
-| **Hot Topics** | Clustered conversations ranked by severity (critical/high/medium/low) and sentiment |
-| **Conversation Insights** | Drill-down into specific messages and their context |
-| **User Sentiment** | Breakdown of frustrated, confused, neutral, and positive signals |
-| **Today's Highlights** | Curated summary of the day's most important activity |
+| **KPI Cards** | Message count, active users, cluster count with trend deltas. Clean white cards with accent-colored shadow glow. |
+| **Community Activity Chart** | Hourly breakdown of messages and speakers with bar/line visualization. Click an hour to filter insights. |
+| **Activity Heatmap** | 7-day × 24-hour grid showing message density per hour. Integrated into the activity chart. |
+| **Hot Topics** | Clustered conversations ranked by severity (critical/high/medium/low) and sentiment. |
+| **Conversation Insights** | Drill-down into specific messages and their context. Full-width internally-scrolling panel. |
+| **User Sentiment** | Breakdown of frustrated, confused, neutral, and positive signals across clusters. |
+| **Mentioned Messages** | Inline mention cards in the overview context (filtered by date range). |
+
+### Mentioned Page (`/mentioned`)
+
+Dedicated page showing **all** monitored `@` mentions across all dates (90-day lookback). Flat card layout with:
+
+- Header with total count badge and column labels
+- Scrollable table with columns: Author, Summary, Date & Time, Mentions, Channel
+- Clickable rows that open the message in the Discord sidebar
+- Independent from the calendar date range — always shows all mentions
+
+### Shared Features
+
+| Feature | Description |
+|---|---|
 | **Command Palette (⌘K)** | Quick search across all clusters and messages |
 | **Discord Sidebar** | Embedded Discord channel in a mobile-emulated panel |
 | **Dark/Light Theme** | Full theme toggle with CSS variable-driven theming |
 | **Zoom Controls** | Custom zoom in/out/reset with Discord sidebar zoom compensation |
 | **Date Range Picker** | URL-driven date selection with presets (Past 24 Hours, Yesterday, Last 3/7 Days) |
-| **Auto-Refresh** | Dashboard data refreshes every 10 minutes |
+| **Auto-Refresh** | Dashboard data refreshes periodically, respects cache staleness |
 | **Animated Login** | Three.js gradient background on the login screen |
+| **Skeleton Loader** | Pulse animation matching the bento grid layout during data fetch |
+
+---
+
+## Data Caching Layer
+
+ZFushou uses a Zustand-based **in-memory data cache** (`stores/data-cache.ts`) to make page switches instant. The cache is not persisted to disk — a fresh app launch always fetches real data.
+
+### How it works
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  stores/data-cache.ts (Zustand)                              │
+│                                                              │
+│  Overview Cache (keyed by from:to:window)                    │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ "2026-05-30:2026-06-02:24h" → { kpi, clusters, hours, │  │
+│  │   mentions, heatmapDays, fetchedAt }                   │  │
+│  │ "2026-05-26:2026-06-02:168h" → { ... }                │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  Mentions Cache (independent, all dates)                     │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ mentions: MentionedMessage[]                            │  │
+│  │ mentionsFetchedAt: timestamp                            │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  Last-used params (for nav links)                            │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ lastFrom, lastTo, lastWindow                           │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- **Overview data** is cached per unique `from:to:activityWindow` key. Switching back to a previously loaded date range returns cached data instantly.
+- **Mentions data** has its own cache with TTL-based staleness. The Mentioned page is independent from the calendar date range.
+- **Last-used params** are stored so sidebar navigation links preserve the user's date selection even when coming from a page without URL params.
+- **Pre-fetch on startup** — clusters, messages, and mentions are fetched in parallel during `shell-layout.tsx` initialization.
+- **Auto-refresh** respects staleness — if cached data is still fresh, no re-fetch occurs.
 
 ---
 
@@ -309,6 +389,7 @@ All state is managed via **Zustand** stores:
 
 | Store | Purpose |
 |---|---|
+| `stores/data-cache.ts` | In-memory data cache with TTL-based staleness. Overview data keyed by date params; mentions data cached independently. Pre-fetch support. |
 | `stores/auth.ts` | Auth lifecycle: init, login, token handling, logout with revocation |
 | `stores/theme.ts` | Dark/light mode toggle |
 | `stores/discord-sidebar.ts` | Discord panel open/close state and URL |
@@ -357,13 +438,25 @@ Defined in `electron-builder.yml`:
 | Setting | Value |
 |---|---|
 | **App ID** | `com.zfushou.desktop` |
-| **Product Name** | Z Fushou |
+| **Product Name** | ZFushou |
 | **Output** | `release/` |
-| **ASAR** | Disabled |
+| **ASAR** | Enabled (with unpack for `.node`, standalone, static assets, icons) |
 | **Mac targets** | DMG + ZIP |
 | **Win targets** | NSIS installer (custom install directory, not one-click) |
 | **Publish** | GitHub Releases |
 | **Deep link scheme** | `z-fushou` |
+
+---
+
+## Auto-Updates
+
+ZFushou uses `electron-updater` to check for new versions published to GitHub Releases.
+
+- On launch, the updater checks for a new release
+- If found, it downloads the update in the background
+- Once ready, a restart prompt appears in the title bar
+- The user can restart immediately or dismiss and apply on next launch
+- The preload bridge exposes `window.updater.restart()` and `onUpdateAvailable()` for the renderer to control the update flow
 
 ---
 
@@ -396,8 +489,8 @@ The release workflow (`.github/workflows/release.yml`) builds both platforms in 
 ### Release
 
 ```bash
-git tag v0.67.0
-git push origin v0.67.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 This triggers the workflow, builds both installers, and attaches them to a new GitHub Release.
