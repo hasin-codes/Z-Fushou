@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useDataCache } from '@/stores/data-cache';
 import {
   Bell,
-  Inbox,
+  ScrollText,
   Home,
+  AtSign,
   Settings,
   User,
   LogOut,
@@ -18,16 +20,25 @@ import { useAuthStore } from '@/stores/auth';
 
 const TOP_ITEMS = [
   { label: 'Notifications', icon: Bell, href: '#' },
-  { label: 'Inbox', icon: Inbox, href: '#' },
+  { label: 'Changelog', icon: ScrollText, href: 'https://zfushou.hasinraiyan.me/changelogs', external: true },
 ];
 
 const MAIN_ITEMS = [
   { label: 'Overview', href: '/', icon: Home },
+  { label: 'Mentioned', href: '/mentioned', icon: AtSign },
 ];
 
 export function LeftNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Use last-used date params from cache (not current URL which may be from /mentioned)
+  const lastFrom = useDataCache((s) => s.lastFrom);
+  const lastTo = useDataCache((s) => s.lastTo);
+  const lastWindow = useDataCache((s) => s.lastWindow);
+  const overviewHref = lastFrom && lastTo
+    ? `/?from=${lastFrom}&to=${lastTo}${lastWindow ? `&window=${lastWindow}` : ''}`
+    : '/';
 
   useEffect(() => {
     const handleToggle = () => setCollapsed((prev) => !prev);
@@ -55,8 +66,9 @@ export function LeftNav() {
       {/* Main Nav Group */}
       <div className="flex flex-col gap-1 p-1.5 bg-white/3 rounded-4xl border border-white/5 shrink-0">
         {MAIN_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
-          return <NavIcon key={item.label} item={item} isActive={isActive} />;
+          const isActive = pathname === item.href || (item.href === '/' && pathname === '/');
+          const href = item.href === '/' ? overviewHref : item.href;
+          return <NavIcon key={item.label} item={{ ...item, href }} isActive={isActive} />;
         })}
       </div>
 
@@ -143,25 +155,41 @@ function NavIcon({
   item,
   isActive = false
 }: {
-  item: { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
+  item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; external?: boolean };
   isActive?: boolean
 }) {
   const Icon = item.icon;
 
+  const link = item.external ? (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 group",
+        "text-white/40 hover:text-white/80 hover:bg-white/5"
+      )}
+    >
+      <Icon className="size-4.5 stroke-[1.8px]" />
+    </a>
+  ) : (
+    <Link
+      href={item.href}
+      className={cn(
+        "relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 group",
+        isActive
+          ? "bg-[#5a6332] text-white shadow-[0_0_15px_rgba(90,99,50,0.3)]"
+          : "text-white/40 hover:text-white/80 hover:bg-white/5"
+      )}
+    >
+      <Icon className={cn("size-4.5", isActive ? "stroke-[2.5px]" : "stroke-[1.8px]")} />
+    </Link>
+  );
+
   return (
     <Tooltip delayDuration={100}>
       <TooltipTrigger asChild>
-        <Link
-          href={item.href}
-          className={cn(
-            "relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 group",
-            isActive
-              ? "bg-[#5a6332] text-white shadow-[0_0_15px_rgba(90,99,50,0.3)]"
-              : "text-white/40 hover:text-white/80 hover:bg-white/5"
-          )}
-        >
-          <Icon className={cn("size-4.5", isActive ? "stroke-[2.5px]" : "stroke-[1.8px]")} />
-        </Link>
+        {link}
       </TooltipTrigger>
       <TooltipContent
         side="right"

@@ -9,6 +9,7 @@ import { DiscordSidebar } from '@/components/shell/discord-sidebar';
 import { WindowControlTopbar } from '@/components/shell/window-control-topbar';
 import { edgeGet } from '@/lib/edge-fetch';
 import { normalizeEdgeClusters } from '@/lib/edge-normalize';
+import { fetchAndCacheMentions } from '@/hooks/use-mentions-data';
 import type { ClusterWithSummary, EnrichedMessage } from '@/types';
 
 export function ShellLayout({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
           const list = Array.isArray(data.messages) ? data.messages : Array.isArray(data) ? data : [];
           return list as EnrichedMessage[];
         }),
+      fetchAndCacheMentions(),
     ])
       .then(([clustersData, messagesData]) => {
         setClusters(clustersData);

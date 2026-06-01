@@ -145,22 +145,6 @@ html.dark {
   --card-skeleton: #3C3C3C;
 }
 
-/* KPI card dark bg colors */
-:root {
-  --kpi-purple-bg: #f8f6ff;
-  --kpi-orange-bg: #fff8f4;
-  --kpi-blue-bg: #f2f6ed;  --kpi-amber-bg: #fffbf0;
-  --kpi-rose-bg: #fff4f6;
-  --kpi-red-bg: #fef2f2;
-}
-html.dark {
-  --kpi-purple-bg: #2a2435;
-  --kpi-orange-bg: #2d2420;
-  --kpi-blue-bg: #262e1e;
-  --kpi-amber-bg: #2d2a1e;
-  --kpi-rose-bg: #2d1e22;
-  --kpi-red-bg: #2d1e1e;
-}
 
 /* Hot topics icon bg colors */
 :root {

@@ -6,7 +6,6 @@ import type { KpiData } from '@/types';
 interface KpiCardDef {
   label: string;
   color: string;
-  bgColor: string;
   icon: React.ReactNode;
   getValue: (kpi: KpiData) => string;
   getDelta: (kpi: KpiData) => number | null;
@@ -50,108 +49,10 @@ const IconFrustration = (
   </svg>
 );
 
-/* Background art patterns */
-function DotGridArt({ color }: { color: string }) {
-  const cols = 14, rows = 6, gapX = 22, gapY = 18;
-  const dots: { cx: number; cy: number; r: number }[] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const offset = r % 2 === 0 ? 0 : gapX / 2;
-      dots.push({ cx: 8 + c * gapX + offset, cy: 10 + r * gapY, r: r % 3 === 0 ? 2.2 : 1.4 });
-    }
-  }
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.12]" viewBox="0 0 310 115" preserveAspectRatio="xMidYMid slice">
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill={color} />
-      ))}
-    </svg>
-  );
-}
-
-function ArcFanArt({ color }: { color: string }) {
-  const arcs = [18, 32, 48, 66, 86];
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.09]" viewBox="0 0 300 110" preserveAspectRatio="xMidYMid slice">
-      {arcs.map((r, i) => (
-        <path key={i} d={`M 300 110 A ${r} ${r} 0 0 0 ${300 - r} 110`} fill="none" stroke={color} strokeWidth={1.2 + i * 0.2} opacity={0.3 + i * 0.12} />
-      ))}
-    </svg>
-  );
-}
-
-function BokehArt({ color }: { color: string }) {
-  const circles = [
-    { cx: 45, cy: 55, r: 32 }, { cx: 100, cy: 40, r: 26 },
-    { cx: 160, cy: 65, r: 38 }, { cx: 220, cy: 45, r: 28 },
-    { cx: 275, cy: 60, r: 22 },
-  ];
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.07]" viewBox="0 0 300 110" preserveAspectRatio="xMidYMid slice">
-      {circles.map((c, i) => (
-        <circle key={i} cx={c.cx} cy={c.cy} r={c.r} fill={color} opacity={0.18 - i * 0.02} />
-      ))}
-    </svg>
-  );
-}
-
-function CrosshatchArt({ color }: { color: string }) {
-  const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
-  for (let i = -4; i < 20; i++) {
-    lines.push({ x1: i * 20, y1: 0, x2: i * 20 + 110, y2: 110 });
-    lines.push({ x1: i * 20 + 110, y1: 0, x2: i * 20, y2: 110 });
-  }
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.06]" viewBox="0 0 300 110" preserveAspectRatio="xMidYMid slice">
-      {lines.map((l, i) => (
-        <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={color} strokeWidth="0.7" />
-      ))}
-    </svg>
-  );
-}
-
-function DiamondGridArt({ color }: { color: string }) {
-  const size = 18;
-  const diamonds: string[] = [];
-  for (let row = -1; row < 8; row++) {
-    for (let col = -1; col < 20; col++) {
-      const cx = col * size + (row % 2 === 0 ? 0 : size / 2);
-      const cy = row * size * 0.7;
-      const half = size * 0.3;
-      diamonds.push(`M ${cx} ${cy - half} L ${cx + half} ${cy} L ${cx} ${cy + half} L ${cx - half} ${cy} Z`);
-    }
-  }
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.10]" viewBox="0 0 300 110" preserveAspectRatio="xMidYMid slice">
-      {diamonds.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke={color} strokeWidth="0.7" />
-      ))}
-    </svg>
-  );
-}
-
-function SoftBlobsArt({ color }: { color: string }) {
-  const blobs = [
-    { cx: 55, cy: 50, rx: 40, ry: 30, rot: -15 },
-    { cx: 140, cy: 60, rx: 35, ry: 28, rot: 10 },
-    { cx: 230, cy: 45, rx: 42, ry: 32, rot: -5 },
-  ];
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.06]" viewBox="0 0 300 110" preserveAspectRatio="xMidYMid slice">
-      {blobs.map((b, i) => (
-        <ellipse key={i} cx={b.cx} cy={b.cy} rx={b.rx} ry={b.ry} fill={color} opacity={0.22 - i * 0.04} transform={`rotate(${b.rot} ${b.cx} ${b.cy})`} />
-      ))}
-    </svg>
-  );
-}
-
-const CARD_ART = [DotGridArt, ArcFanArt, BokehArt, CrosshatchArt, DiamondGridArt, SoftBlobsArt];
-
 const CARDS: KpiCardDef[] = [
   {
     label: 'Discussed Topics',
     color: '#8b5cf6',
-    bgColor: 'var(--kpi-purple-bg)',
     icon: IconClusters,
     getValue: kpi => formatNumber(kpi.total_clusters),
     getDelta: kpi => kpi.total_clusters_delta,
@@ -159,7 +60,6 @@ const CARDS: KpiCardDef[] = [
   {
     label: 'Total Message',
     color: '#f97316',
-    bgColor: 'var(--kpi-orange-bg)',
     icon: IconVolume,
     getValue: kpi => formatNumber(kpi.total_messages),
     getDelta: kpi => kpi.total_messages_delta,
@@ -167,7 +67,6 @@ const CARDS: KpiCardDef[] = [
   {
     label: 'Active Users',
     color: '#5a6332',
-    bgColor: 'var(--kpi-blue-bg)',
     icon: IconUsers,
     getValue: kpi => formatNumber(kpi.active_users),
     getDelta: kpi => kpi.active_users_delta,
@@ -175,7 +74,6 @@ const CARDS: KpiCardDef[] = [
   {
     label: 'Message Flow',
     color: '#f59e0b',
-    bgColor: 'var(--kpi-amber-bg)',
     icon: IconSparkle,
     getValue: kpi => `${(kpi.avg_messages_per_hour ?? 0).toFixed(1)}/h`,
     getDelta: kpi => kpi.avg_messages_per_hour_delta,
@@ -183,7 +81,6 @@ const CARDS: KpiCardDef[] = [
   {
     label: 'High Severity',
     color: '#f43f5e',
-    bgColor: 'var(--kpi-rose-bg)',
     icon: IconSeverity,
     getValue: kpi => formatNumber(kpi.high_severity_count),
     getDelta: kpi => kpi.high_severity_delta,
@@ -192,7 +89,6 @@ const CARDS: KpiCardDef[] = [
   {
     label: 'Frustration Rate',
     color: '#ef4444',
-    bgColor: 'var(--kpi-red-bg)',
     icon: IconFrustration,
     getValue: kpi => `${kpi.frustrated_percentage ?? 0}%`,
     getDelta: kpi => kpi.frustrated_delta,
@@ -206,22 +102,15 @@ export function KpiRow({ kpi }: { kpi: KpiData | null }) {
   return (
     <div className="w-full">
       <div className="dashboard-kpi-grid">
-        {CARDS.map((card, index) => {
+        {CARDS.map((card) => {
           return (
             <div
               key={card.label}
-              className="overview-card dashboard-kpi-card relative flex flex-col justify-between min-w-0 p-3 lg:p-5 rounded-2xl cursor-default transition-shadow overflow-hidden"
+              className="overview-card dashboard-kpi-card relative flex flex-col justify-between min-w-0 p-3 lg:p-5 rounded-2xl cursor-default transition-shadow overflow-hidden bg-white dark:bg-[#262626] border border-slate-100 dark:border-[#3B3B3B]"
               style={{
-                backgroundColor: card.bgColor,
-                boxShadow: `0 2px 8px 0 ${card.color}08, inset 0 0 0 1px var(--card-border-inner)`
+                boxShadow: `0 1px 3px rgba(0,0,0,0.04), 0 4px 16px -4px ${card.color}18`
               }}
             >
-              {/* Thematic background art */}
-              {(() => {
-                const ArtComponent = CARD_ART[index];
-                return ArtComponent ? <ArtComponent color={card.color} /> : null;
-              })()}
-
               {/* Label */}
               <span className="relative z-10 text-[10px] lg:text-[12px] font-medium" style={{ color: 'var(--card-text)' }}>
                 {card.label}
