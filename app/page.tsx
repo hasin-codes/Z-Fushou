@@ -6,11 +6,12 @@ import { CommunityActivityChart } from '@/components/overview/community-activity
 import { UserSentiment } from '@/components/overview/user-sentiment';
 import { HotTopics } from '@/components/overview/hot-topics';
 import { ConversationInsights } from '@/components/overview/conversation-insights';
-import { MobileHeader } from '@/components/overview/mobile-header';
+import { LiveActivity } from '@/components/overview/live-activity';
 import { MobileHotTopics } from '@/components/overview/mobile-hot-topics';
 import { MobileConversationInsights } from '@/components/overview/mobile-conversation-insights';
 import { DashboardLoader } from '@/components/shared/dashboard-loader';
 import { useOverviewData } from '@/hooks/use-overview-data';
+import { useLiveData } from '@/hooks/use-live-data';
 
 function OverviewContent() {
   const {
@@ -22,7 +23,10 @@ function OverviewContent() {
     totalSpeakers,
     heatmapDays,
     loading,
+    refetch,
   } = useOverviewData();
+
+  const { cases: liveCases, connected: liveConnected, initialLoading: liveLoading } = useLiveData();
 
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
@@ -31,12 +35,11 @@ function OverviewContent() {
 
   return (
     <div
-      className="h-full overflow-y-auto custom-scrollbar page-content-bg relative"
+      className="h-full overflow-y-auto custom-scrollbar page-content-bg relative dashboard-page-scroll"
     >
       <DashboardLoader visible={loading} />
       {/* ───────────────── MOBILE ───────────────── */}
       <div className="dashboard-compact-page flex min-w-0 flex-col gap-5 pb-24 lg:pb-8">
-        <MobileHeader />
         <div className="px-4 sm:px-5">
           <KpiRow kpi={kpi} />
         </div>
@@ -45,13 +48,13 @@ function OverviewContent() {
       </div>
 
       {/* ───────────────── DESKTOP ───────────────── */}
-      <div className="dashboard-desktop-page h-full w-full overflow-y-auto overflow-x-hidden p-4 2xl:p-8">
+      <div className="dashboard-desktop-page h-full w-full overflow-hidden p-4 2xl:p-8">
         <div className="dashboard-desktop-frame">
           {/*
             Bento Grid — 15 columns, all cells independent.
             Row 1 (auto):  KPI (10 cols) | Hot Topics (5 cols, spans rows 1–2)
             Row 2 (340px): Activity (6 cols) | Sentiment (4 cols)
-            Row 3 (680px): Insights (15 cols, full width) — scrolls internally
+            Row 3 (680px): Live Activity (5 cols) | Insights (10 cols)
           */}
           <div
             className="dashboard-main-grid"
@@ -89,9 +92,14 @@ function OverviewContent() {
               <HotTopics clusters={safeClusters} />
             </div>
 
-            {/* Row 3: Conversation Insights (full 15 cols) */}
-            <div style={{ gridColumn: '1 / -1' }} className="min-w-0 min-h-0 h-full overflow-hidden">
-              <ConversationInsights mentions={safeMentions} />
+            {/* Row 3: Live Activity (cols 1–5) */}
+            <div style={{ gridColumn: '1 / 6' }} className="min-w-0 min-h-0 h-full overflow-hidden">
+              <LiveActivity cases={liveCases} connected={liveConnected} initialLoading={liveLoading} />
+            </div>
+
+            {/* Row 3: Conversation Insights (cols 6–15) */}
+            <div style={{ gridColumn: '6 / -1' }} className="min-w-0 min-h-0 h-full overflow-hidden">
+              <ConversationInsights mentions={safeMentions} onRefresh={refetch} />
             </div>
 
           </div>
@@ -106,7 +114,7 @@ export default function OverviewPage() {
     <Suspense
       fallback={
         <div
-          className="h-full overflow-y-auto custom-scrollbar page-content-bg"
+          className="h-full overflow-y-auto custom-scrollbar page-content-bg dashboard-page-scroll"
         >
 
           {/* ───────────────── MOBILE SKELETON ───────────────── */}
@@ -124,7 +132,7 @@ export default function OverviewPage() {
           </div>
 
           {/* ───────────────── DESKTOP SKELETON ───────────────── */}
-          <div className="dashboard-desktop-page h-full w-full overflow-y-auto overflow-x-hidden p-4 2xl:p-8">
+          <div className="dashboard-desktop-page h-full w-full overflow-hidden p-4 2xl:p-8">
             <div className="dashboard-desktop-frame">
               <div
                 className="dashboard-main-grid"
@@ -157,8 +165,13 @@ export default function OverviewPage() {
                   <div className="h-full w-full rounded-2xl bg-slate-200/50 animate-pulse" />
                 </div>
 
-                {/* Row 3: Insights skeleton (full 15 cols) */}
-                <div style={{ gridColumn: '1 / -1' }} className="min-w-0 min-h-0 h-full overflow-hidden">
+                {/* Row 3: Live Activity skeleton (cols 1–5) */}
+                <div style={{ gridColumn: '1 / 6' }} className="min-w-0 min-h-0 h-full overflow-hidden">
+                  <div className="h-full w-full rounded-2xl bg-slate-200/50 animate-pulse" />
+                </div>
+
+                {/* Row 3: Insights skeleton (cols 6–15) */}
+                <div style={{ gridColumn: '6 / -1' }} className="min-w-0 min-h-0 h-full overflow-hidden">
                   <div className="h-full w-full rounded-2xl bg-slate-200/50 animate-pulse" />
                 </div>
 

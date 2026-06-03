@@ -410,6 +410,20 @@ async function createMainWindow() {
 
   createDiscordView();
 
+  // Replace CORS headers on Supabase Edge Function responses to ensure exactly
+  // one value (avoids "multiple values" errors when the edge function already
+  // sets them and our injection would duplicate).
+  session.defaultSession.webRequest.onHeadersReceived(
+    { urls: ['https://*.supabase.co/*'] },
+    (details, callback) => {
+      const headers = { ...details.responseHeaders };
+      headers['access-control-allow-origin'] = ['*'];
+      headers['access-control-allow-headers'] = ['Authorization, Content-Type, apikey, x-client-info'];
+      headers['access-control-allow-methods'] = ['GET, POST, OPTIONS'];
+      callback({ responseHeaders: headers });
+    },
+  );
+
   const rendererUrl = isDev ? devUrl : await startProductionNextServer();
   await loadUrlWithRetry(mainWindow, rendererUrl);
 
@@ -562,6 +576,9 @@ ipcMain.on('window:exit-login-mode', () => {
   mainWindow.setMaximizable(true);
   mainWindow.setSize(1440, 920);
   mainWindow.center();
+  mainWindow.webContents.setZoomLevel(-1.2);
+  applyDiscordBounds();
+  sendStaggeredRefreshBounds();
 });
 
 ipcMain.on('window:minimize', () => {
@@ -611,7 +628,7 @@ ipcMain.on('window:zoom-out', () => {
 
 ipcMain.on('window:zoom-reset', () => {
   if (mainWindow) {
-    mainWindow.webContents.setZoomLevel(0);
+    mainWindow.webContents.setZoomLevel(-1.2);
     applyDiscordBounds();
     sendStaggeredRefreshBounds();
   }

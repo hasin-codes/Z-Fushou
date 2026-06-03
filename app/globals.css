@@ -72,6 +72,7 @@
   --ease-ui: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-smooth: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Spacing */
   --space-1: 4px;
@@ -220,7 +221,7 @@ html.dark .cluster-feed-row:hover {
   width: 100%;
   min-width: 0;
   flex: 1 1 0%;
-  min-height: 884px;
+  min-height: 0;
   --kpi-row-height: 112px;
 }
 
@@ -245,6 +246,10 @@ html.dark .cluster-feed-row:hover {
     display: flex;
     flex-direction: column;
   }
+
+  .dashboard-page-scroll {
+    overflow: hidden !important;
+  }
 }
 
 .discord-sidebar-shell {
@@ -263,8 +268,9 @@ html.dark .cluster-feed-row:hover {
 
 .dashboard-main-grid {
   grid-template-columns: repeat(15, minmax(0, 1fr));
-  grid-template-rows: var(--kpi-row-height) 340px 680px;
+  grid-template-rows: var(--kpi-row-height) 340px 1fr;
   gap: 24px;
+  height: 100%;
 }
 
 .dashboard-kpi-grid {
@@ -327,8 +333,9 @@ html.dark .cluster-feed-row:hover {
 
   .dashboard-main-grid {
     grid-template-columns: repeat(10, minmax(0, 1fr));
-    grid-template-rows: auto 320px 420px 620px;
+    grid-template-rows: auto 320px 340px 1fr;
     gap: 20px;
+    height: 100%;
   }
 
   .dashboard-main-grid > :nth-child(1) {
@@ -352,6 +359,10 @@ html.dark .cluster-feed-row:hover {
     grid-column: 1 / -1 !important;
   }
 
+  .dashboard-main-grid > :nth-child(6) {
+    grid-column: 1 / -1 !important;
+  }
+
   .dashboard-kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
@@ -365,8 +376,9 @@ html.dark .cluster-feed-row:hover {
 
   .dashboard-main-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 320px 320px 420px 620px;
+    grid-template-rows: auto 320px 320px 340px 1fr;
     gap: 16px;
+    height: 100%;
   }
 
   .dashboard-main-grid > * {

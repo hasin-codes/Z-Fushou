@@ -37,6 +37,11 @@ interface DataCacheState {
   lastFrom: string;
   lastTo: string;
   lastWindow: string;
+
+  /** Discussed topics cache (all clusters, no date filter). */
+  discussedTopicsClusters: ClusterWithSummary[];
+  discussedTopicsFetchedAt: number | null;
+  discussedTopicsLoading: boolean;
 }
 
 interface DataCacheActions {
@@ -53,6 +58,11 @@ interface DataCacheActions {
 
   /** Returns the last-cached overview entry (for instant hydration when URL params are missing). */
   getLastOverview: () => OverviewCacheEntry | null;
+
+  // Discussed Topics
+  setDiscussedTopics: (clusters: ClusterWithSummary[]) => void;
+  setDiscussedTopicsLoading: (loading: boolean) => void;
+  discussedTopicsStale: () => boolean;
 }
 
 export const useDataCache = create<DataCacheState & DataCacheActions>((set, get) => ({
@@ -79,6 +89,11 @@ export const useDataCache = create<DataCacheState & DataCacheActions>((set, get)
   lastFrom: '',
   lastTo: '',
   lastWindow: '',
+
+  // ── Discussed Topics ──
+  discussedTopicsClusters: [],
+  discussedTopicsFetchedAt: null,
+  discussedTopicsLoading: false,
 
   getOverview: (from, to, activityWindow) => {
     const key = makeOverviewKey(from, to, activityWindow);
@@ -112,5 +127,17 @@ export const useDataCache = create<DataCacheState & DataCacheActions>((set, get)
     if (!lastFrom || !lastTo) return null;
     const key = makeOverviewKey(lastFrom, lastTo, lastWindow);
     return overviewEntries[key] ?? null;
+  },
+
+  // ── Discussed Topics ──
+  setDiscussedTopics: (clusters) =>
+    set({ discussedTopicsClusters: clusters, discussedTopicsFetchedAt: Date.now(), discussedTopicsLoading: false }),
+
+  setDiscussedTopicsLoading: (loading) => set({ discussedTopicsLoading: loading }),
+
+  discussedTopicsStale: () => {
+    const { discussedTopicsFetchedAt } = get();
+    if (!discussedTopicsFetchedAt) return true;
+    return Date.now() - discussedTopicsFetchedAt > CACHE_TTL;
   },
 }));

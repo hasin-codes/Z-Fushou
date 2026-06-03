@@ -9,10 +9,9 @@ import {
   ScrollText,
   Home,
   AtSign,
-  Settings,
-  User,
   LogOut,
   HelpCircle,
+  MessageSquareText,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -26,6 +25,7 @@ const TOP_ITEMS = [
 const MAIN_ITEMS = [
   { label: 'Overview', href: '/', icon: Home },
   { label: 'Mentioned', href: '/mentioned', icon: AtSign },
+  { label: 'Discussed Topics', href: '/discussed-topics', icon: MessageSquareText },
 ];
 
 export function LeftNav() {
@@ -74,37 +74,53 @@ export function LeftNav() {
 
       <div className="flex-1" />
 
-      {/* Bottom Group: Settings + Avatar */}
+      {/* Bottom Group: Avatar */}
       <div className="flex flex-col gap-1 p-1.5 bg-white/3 rounded-[28px] border border-white/5 shrink-0">
-        <Tooltip delayDuration={100}>
-          <TooltipTrigger asChild>
-            <Link
-              href="#"
-              className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 text-white/40 hover:text-white/80 hover:bg-white/5"
-            >
-              <Settings className="size-4.5 stroke-[1.8px]" />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            sideOffset={12}
-            className="border-white/10 text-white text-[12px] font-semibold px-3 py-1.5 rounded-lg shadow-xl"
-            style={{ backgroundColor: 'var(--shell-popover-bg)' }}
-          >
-            Settings
-          </TooltipContent>
-        </Tooltip>
-
         <AvatarMenu />
       </div>
     </aside>
   );
 }
 
+function generatePixelAvatar(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const palettes = [
+    ['#2d6a4f', '#40916c', '#52b788', '#1b4332', '#d8f3dc'],
+    ['#1b4332', '#2d6a4f', '#40916c', '#52b788', '#ffffff'],
+    ['#52b788', '#40916c', '#2d6a4f', '#ffffff', '#d8f3dc'],
+    ['#b7e4c7', '#52b788', '#40916c', '#2d6a4f', '#1b4332'],
+    ['#40916c', '#2d6a4f', '#1b4332', '#ffffff', '#b7e4c7'],
+  ];
+
+  const palette = palettes[Math.abs(hash) % palettes.length];
+
+  const size = 6;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="100%" height="100%">`;
+
+  let currentHash = Math.abs(hash);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const pixelHash = (currentHash ^ (x * 37) ^ (y * 13)) % palette.length;
+      const color = palette[Math.abs(pixelHash)];
+      svg += `<rect x="${x}" y="${y}" width="1" height="1" fill="${color}" />`;
+      currentHash = (currentHash * 11) % 1000000;
+    }
+  }
+  svg += '</svg>';
+
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 function AvatarMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const logout = useAuthStore((s) => s.logout);
+  const token = useAuthStore((s) => s.token);
+  const avatarSrc = generatePixelAvatar(token || 'default');
 
   useEffect(() => {
     if (!open) return;
@@ -121,9 +137,9 @@ function AvatarMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="w-10 h-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center shrink-0 shadow-lg cursor-pointer hover:scale-105 transition-transform"
+        className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0 shadow-lg cursor-pointer hover:scale-105 transition-transform"
       >
-        <User className="size-5 text-[#1c1c1a] dark:text-white/80" fill="currentColor" />
+        <img src={avatarSrc} alt="Avatar" className="w-full h-full" />
       </button>
 
       {open && (

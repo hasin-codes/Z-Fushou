@@ -15,7 +15,7 @@ export default function MentionedPage() {
 }
 
 function MentionedPageContent() {
-  const { mentions, loading } = useMentionsData();
+  const { mentions, loading, refetch } = useMentionsData();
 
   if (loading) {
     return <MentionedPageSkeleton />;
@@ -38,27 +38,52 @@ function MentionedPageContent() {
                 </span>
               )}
             </div>
-            <Tooltip delayDuration={100}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 text-[12px] font-medium text-sage-400 dark:text-[#606060] cursor-not-allowed px-2 py-1 rounded-lg hover:bg-sage-50 dark:hover:bg-[#2a2a2a] transition-colors"
-                  disabled
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  </svg>
-                  Filter
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={8}
-                className="border-slate-200 dark:border-[#3B3B3B] text-slate-600 dark:text-[#929292] text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
-              >
-                Coming soon
-              </TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1.5">
+               <Tooltip delayDuration={100}>
+                 <TooltipTrigger asChild>
+                   <button
+                     type="button"
+                     className="flex items-center gap-1.5 text-[12px] font-medium text-sage-400 dark:text-[#606060] cursor-not-allowed px-2 py-1 rounded-lg hover:bg-sage-50 dark:hover:bg-[#2a2a2a] transition-colors"
+                     disabled
+                   >
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                     </svg>
+                     Filter
+                   </button>
+                 </TooltipTrigger>
+                 <TooltipContent
+                   side="bottom"
+                   sideOffset={8}
+                   className="border-slate-200 dark:border-[#3B3B3B] text-slate-600 dark:text-[#929292] text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
+                 >
+                   Coming soon
+                 </TooltipContent>
+               </Tooltip>
+               <Tooltip delayDuration={100}>
+                 <TooltipTrigger asChild>
+                   <button
+                     type="button"
+                     onClick={refetch}
+                     className="flex items-center justify-center text-[12px] font-medium text-sage-400 dark:text-[#606060] px-2 py-1 rounded-lg hover:bg-sage-50 dark:hover:bg-[#2a2a2a] transition-colors"
+                   >
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M21 2v6h-6" />
+                       <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                       <path d="M3 22v-6h6" />
+                       <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                     </svg>
+                   </button>
+                 </TooltipTrigger>
+                 <TooltipContent
+                   side="bottom"
+                   sideOffset={8}
+                   className="border-slate-200 dark:border-[#3B3B3B] text-slate-600 dark:text-[#929292] text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
+                 >
+                   Refresh
+                 </TooltipContent>
+               </Tooltip>
+            </div>
           </div>
           {/* Column labels row */}
           <div className="flex items-center px-5 py-2 text-[11px] text-sage-400 dark:text-[#929292] font-semibold border-t border-sage-50 dark:border-[#3B3B3B]/60 bg-slate-50 dark:bg-[#2a2a2a]">

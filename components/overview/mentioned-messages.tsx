@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { formatTime } from '@/lib/utils';
 import { useDiscordSidebarStore } from '@/stores/discord-sidebar';
 import type { MentionedMessage } from '@/types';
@@ -24,6 +24,13 @@ function formatSummary(raw: string | null): string {
 
 export function MentionedMessages({ mentions }: { mentions: MentionedMessage[] }) {
   const openDiscordSidebar = useDiscordSidebarStore((s) => s.openDiscordSidebar);
+  const sidebarOpen = useDiscordSidebarStore((s) => s.open);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Clear active highlight when sidebar closes
+  useEffect(() => {
+    if (!sidebarOpen) setActiveId(null);
+  }, [sidebarOpen]);
 
   const sorted = useMemo(
     () => [...mentions].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
@@ -47,62 +54,56 @@ export function MentionedMessages({ mentions }: { mentions: MentionedMessage[] }
 
   return (
     <div className="h-full min-h-0 flex flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-        <table className="w-full text-left border-collapse table-fixed">
-          <thead className="sticky top-0 bg-white dark:bg-[#262626] z-20 shadow-[0_1px_0_rgba(241,245,249,1)] dark:shadow-[0_1px_0_#3B3B3B]">
-            <tr>
-              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-5 py-3" style={{ width: '12%' }}>Author</th>
-              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-2 py-3" style={{ width: '55%' }}>Summary</th>
-              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-2 py-3" style={{ width: '13%' }}>Time</th>
-              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-2 py-3 text-center" style={{ width: '10%' }}>Mentions</th>
-              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-2 py-3" style={{ width: '10%' }}>Channel</th>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-xl border border-[#e2e5ea] dark:border-[#3B3B3B]">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-[#f7f8fa] dark:bg-[#1e1e1e]">
+              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-5 py-2.5 rounded-tl-xl w-[140px] min-w-[140px]">Author</th>
+              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold px-2 py-2.5">Summary</th>
+              <th className="text-[11px] text-sage-400 dark:text-[#929292] font-semibold pl-6 pr-5 py-2.5 rounded-tr-xl w-[110px] min-w-[110px] text-right">Time</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((m) => (
+            {sorted.map((m) => {
+              const isActive = activeId === m.message_id;
+              return (
               <tr
                 key={m.message_id}
                 tabIndex={0}
                 role="button"
-                onClick={() => openDiscordSidebar(buildDiscordDeepLink(m))}
+                onClick={() => { setActiveId(m.message_id); openDiscordSidebar(buildDiscordDeepLink(m)); }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
+                    setActiveId(m.message_id);
                     openDiscordSidebar(buildDiscordDeepLink(m));
                   }
                 }}
-                className="border-b border-sage-50 dark:border-[#3B3B3B] group cursor-pointer hover:bg-sage-50/80 dark:hover:bg-[#1F1F1F] focus-visible:bg-sage-50 dark:focus-visible:bg-[#1F1F1F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sage-300 transition-colors"
+                className={`border-b border-sage-50 dark:border-[#3B3B3B] group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sage-300 ${
+                  isActive
+                    ? 'bg-sage-50/80 dark:bg-[#1F1F1F]'
+                    : 'hover:bg-sage-50/80 dark:hover:bg-[#1F1F1F] focus-visible:bg-sage-50 dark:focus-visible:bg-[#1F1F1F]'
+                }`}
                 aria-label={`Open Discord message from ${m.username}: ${formatSummary(m.mention_summary)}`}
               >
-                <td className="px-5 py-3" style={{ width: '12%' }}>
+                <td className="px-5 py-3 w-[140px] min-w-[140px]">
                   <span className="text-[12px] font-semibold text-sage-800 dark:text-[#E5E5E5] truncate block">
                     {m.username || 'Unknown'}
                   </span>
                 </td>
-                <td className="px-2 py-3" style={{ width: '55%' }}>
+                <td className="px-2 py-3">
                   <span className="text-[13px] font-medium text-sage-700 dark:text-[#929292] line-clamp-2 leading-relaxed block">
                     {formatSummary(m.mention_summary)}
                   </span>
                 </td>
-                <td className="px-2 py-3 text-[12px] font-medium text-sage-600 dark:text-[#929292] truncate" style={{ width: '13%' }}>
-                  {formatTime(m.timestamp)}
-                </td>
-                <td className="px-2 py-3 text-center" style={{ width: '10%' }}>
-                  {m.mentioned_user_ids.length > 0 ? (
-                    <span className="inline-flex items-center justify-center text-[11px] font-bold text-sage-600 dark:text-[#929292] bg-sage-100 dark:bg-[#3C3C3C] rounded-full px-2 py-0.5 min-w-5">
-                      {m.mentioned_user_ids.length}
-                    </span>
-                  ) : (
-                    <span className="text-[12px] text-sage-500 dark:text-[#929292]">—</span>
-                  )}
-                </td>
-                <td className="px-2 py-3" style={{ width: '10%' }}>
-                  <span className="text-[11px] font-medium text-sage-600 dark:text-[#929292] truncate block">
-                    {m.channel_id.slice(-6)}
+                <td className="pl-6 pr-5 py-3 w-[110px] min-w-[110px] text-right">
+                  <span className="text-[12px] font-medium text-sage-600 dark:text-[#929292] truncate">
+                    {formatTime(m.timestamp)}
                   </span>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

@@ -91,13 +91,6 @@ export function WindowControlTopbar() {
 
     return 'Custom Range';
   }, [fromParam, toParam, windowParam, availableDates]);
-  const [zoomScale, setZoomScale] = useState<number>(() => {
-    if (isElectron && window.windowControls?.getZoomFactor) {
-      return Math.round(window.windowControls.getZoomFactor() * 100);
-    }
-    return 100;
-  });
-
   const availableDateSet = useMemo(() => new Set(availableDates), [availableDates]);
 
   const applyRange = (nextFrom: string, nextTo: string, windowMode?: 'past24h') => {
@@ -171,6 +164,9 @@ export function WindowControlTopbar() {
     applyRange(nextRange.from, nextRange.to, preset === 'Past 24 Hours' ? 'past24h' : undefined);
   };
 
+  // Hide calendar on pages that don't use date filtering
+  const hideCalendar = pathname === '/mentioned' || pathname === '/discussed-topics';
+
   // Format Date range text for the pill button
   const formatDateRangeText = () => {
     if (!range?.from) return 'Select dates';
@@ -215,14 +211,12 @@ export function WindowControlTopbar() {
     if (isElectron) {
       window.windowControls?.zoomIn();
     }
-    setZoomScale((prev) => Math.min(prev + 10, 150));
   };
 
   const handleZoomOut = () => {
     if (isElectron) {
       window.windowControls?.zoomOut();
     }
-    setZoomScale((prev) => Math.max(prev - 10, 50));
   };
 
   return (
@@ -248,6 +242,7 @@ export function WindowControlTopbar() {
         </div>
 
         {/* Date Selector / Date Range Selector Pill */}
+        {!hideCalendar && (
         <Popover>
           <PopoverTrigger asChild>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/6 text-white/90 text-[13px] font-semibold hover:bg-white/8 hover:border-white/10 active:scale-98 transition-all duration-200">
@@ -330,6 +325,7 @@ export function WindowControlTopbar() {
             </div>
           </PopoverContent>
         </Popover>
+        )}
       </div>
 
       {/* Center — Logo + Version */}
@@ -444,11 +440,6 @@ export function WindowControlTopbar() {
             Zoom Out (Ctrl -)
           </TooltipContent>
         </Tooltip>
-
-        {/* Zoom Level Indicator */}
-        <span className="text-[11px] font-bold text-white/30 min-w-8 text-center select-none">
-          {zoomScale}%
-        </span>
 
         {/* Zoom In Button */}
         <Tooltip delayDuration={150}>

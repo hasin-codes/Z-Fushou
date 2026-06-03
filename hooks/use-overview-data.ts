@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { addDays, beijingTodayKey, beijingHourFromUtc, utcBoundsForBeijingDate } from '@/lib/date-ranges';
+import { addDays, beijingTodayKey, beijingHourFromUtc, utcBoundsForBeijingDate, utcBoundsForBeijingRange } from '@/lib/date-ranges';
 import { edgeGet } from '@/lib/edge-fetch';
 import { normalizeEdgeKpi, normalizeEdgeClusters, normalizeEdgeMentions, normalizeEdgeActivity } from '@/lib/edge-normalize';
 import { useDataCache } from '@/stores/data-cache';
@@ -146,10 +146,12 @@ export function useOverviewData(): OverviewData {
       activityParams.set('to', to);
     }
 
+    const { start: mStart, end: mEnd } = utcBoundsForBeijingRange(from, to);
     const mentionsParams = new URLSearchParams();
-    mentionsParams.set('from', from);
-    mentionsParams.set('to', to);
-    mentionsParams.set('limit', '100');
+    mentionsParams.set('is_mentioned', 'true');
+    mentionsParams.set('from', mStart);
+    mentionsParams.set('to', mEnd);
+    mentionsParams.set('limit', '500');
 
     Promise.allSettled([
       edgeGet<AnyJson>(`kpi?${kpiParams}`).then(normalizeEdgeKpi),
@@ -192,13 +194,26 @@ export function useOverviewData(): OverviewData {
           heatmapDays,
           mentions,
         });
+
+        // Pre-fetch discussed topics (all clusters, no date filter) into the same store
+        if (useDataCache.getState().discussedTopicsStale()) {
+          edgeGet<unknown>('clusters?limit=500')
+            .then(normalizeEdgeClusters)
+            .then((allClusters) => {
+              useDataCache.getState().setDiscussedTopics(allClusters);
+            })
+            .catch((err: unknown) => {
+              console.error('Discussed topics pre-fetch failed:', err);
+            });
+        }
       });
   }, [from, to, activityWindow]);
 
-  // Fetch on mount / param change when no cache exists
+  // Fetch on mount / param change when cache is missing or stale
   useEffect(() => {
     if (!from || !to) return;
-    if (!overviewEntries[cacheKey]) {
+    const entry = overviewEntries[cacheKey];
+    if (!entry || Date.now() - entry.fetchedAt > CACHE_TTL) {
       fetchData();
     }
   }, [cacheKey]); // eslint-disable-line react-hooks/exhaustive-deps

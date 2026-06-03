@@ -94,3 +94,31 @@ export interface MentionedMessage {
   timestamp: string;
   mentioned_user_ids: string[];
 }
+
+// ── Live timeline types ─────────────────────────────────────────────────
+
+export type AttentionLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface LiveCase {
+  id: string;
+  guild_id: string;
+  channel_id: string;
+  thread_id: string | null;
+  summary: string | null;
+  attention_score: AttentionLevel;
+  status: string;
+  state: string;
+  current_status: string;
+  routing_type: string;
+  confidence: number;
+  message_count: number;
+  update_count: number;
+  timeline: unknown[];
+  unresolved_questions: unknown[];
+  first_message_id: string | null;
+  last_message_id: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

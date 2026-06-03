@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import type { ClusterWithSummary } from '@/types';
 
@@ -109,6 +110,13 @@ export function HotTopics({ clusters }: { clusters: ClusterWithSummary[] }) {
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<ClusterWithSummary | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>('summary');
+  const [renderedCluster, setRenderedCluster] = useState<ClusterWithSummary | null>(null);
+
+  useEffect(() => {
+    if (selectedCluster) {
+      setRenderedCluster(selectedCluster);
+    }
+  }, [selectedCluster]);
 
   const sorted = useMemo(() => {
     const arr = [...clusters];
@@ -137,14 +145,13 @@ export function HotTopics({ clusters }: { clusters: ClusterWithSummary[] }) {
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white dark:bg-[#262626] border border-sage-100 dark:border-[#3B3B3B] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] relative z-10 overflow-hidden">
-      {selectedCluster
-        ? <TopicDetailView
-            cluster={selectedCluster}
-            tab={detailTab}
-            onTabChange={setDetailTab}
-            onBack={handleBack}
-          />
-        : <TopicListView
+      <div 
+        className="flex w-[200%] h-full transition-transform duration-300 ease-[var(--ease-apple)]"
+        style={{ transform: selectedCluster ? 'translateX(-50%)' : 'translateX(0%)' }}
+      >
+        {/* List Pane */}
+        <div className="w-1/2 h-full flex flex-col min-h-0">
+          <TopicListView
             sorted={sorted}
             sort={sort}
             sortOpen={sortOpen}
@@ -153,7 +160,20 @@ export function HotTopics({ clusters }: { clusters: ClusterWithSummary[] }) {
             onSortClose={() => setSortOpen(false)}
             onSelect={handleSelectCluster}
           />
-      }
+        </div>
+
+        {/* Detail Pane */}
+        <div className="w-1/2 h-full flex flex-col min-h-0">
+          {renderedCluster && (
+            <TopicDetailView
+              cluster={renderedCluster}
+              tab={detailTab}
+              onTabChange={setDetailTab}
+              onBack={handleBack}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -177,7 +197,14 @@ function TopicListView({ sorted, sort, sortOpen, onSortChange, onSortToggle, onS
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
         <h3 className="text-[15px] font-bold text-[#2d3219] dark:text-[#E5E5E5]">Hot Topics</h3>
-        <div className="relative">
+        <div className="flex items-center gap-1.5">
+          <Link
+            href="/discussed-topics"
+            className="text-[11px] font-semibold text-[#2d3219] dark:text-[#929292] bg-white dark:bg-[#2B2B2B] px-3 py-1 rounded-lg shadow-sm ring-1 ring-slate-100 dark:ring-[#3B3B3B] hover:bg-slate-50 dark:hover:bg-[#333] active:scale-95 transition-all"
+          >
+            View All
+          </Link>
+          <div className="relative">
           <button
             onClick={onSortToggle}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#3C3C3C] border border-sage-200 dark:border-[#3B3B3B] text-[11px] font-medium text-sage-500 dark:text-[#929292] hover:bg-sage-50 dark:hover:bg-[#333] transition-colors"
@@ -204,6 +231,7 @@ function TopicListView({ sorted, sort, sortOpen, onSortChange, onSortToggle, onS
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
 
