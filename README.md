@@ -33,12 +33,14 @@ ZFushou is a cross-platform desktop app (Windows + macOS) that provides real-tim
 
 - **KPI metrics** — message volume, active users, cluster counts with trend deltas
 - **Activity chart & heatmap** — hourly activity breakdown with bar/line charts plus a 7-day activity heatmap
-- **Hot topics** — conversation clusters ranked by severity and sentiment
-- **Conversation insights** — drill-down into mentioned messages with context
-- **Mentioned page** — dedicated view of all monitored `@` mentions across all dates
+- **Hot topics** — conversation clusters ranked by severity and sentiment with a View All link to the full archive
+- **Live activity feed** — real-time discussion timeline that polls every 30 seconds with attention-level indicators
+- **Conversation insights** — mentioned messages with context and a View All link to the dedicated page
+- **Mentioned page** — dedicated view of all monitored `@` mentions across all dates with active row highlighting
+- **Discussed topics page** — full archive of every community topic organized by date with detail modals
 - **User sentiment** — frustration, confusion, neutral, and positive breakdowns
 
-The app includes an embedded Discord sidebar for direct community access, a command palette for quick search, full dark/light theme support, and automatic background updates via `electron-updater`.
+The app includes an embedded Discord sidebar for direct community access, a command palette for quick search, full dark/light theme support, a unified Zustand data cache for instant page switching, and automatic background updates via `electron-updater`.
 
 ---
 
@@ -87,9 +89,9 @@ The app includes an embedded Discord sidebar for direct community access, a comm
 │  │  │  │ Shell    │ │ Overview │ │ Mentioned     │  │ ││
 │  │  │  │ Layout   │ │ Dashboard│ │ Page (@)      │  │ ││
 │  │  │  ├──────────┤ └──────────┘ └───────────────┘  │ ││
-│  │  │  │ Search   │                                   │ ││
-│  │  │  │ ⌘K       │                                   │ ││
-│  │  │  └──────────┘                                   │ ││
+│  │  │  │ Search   │ ┌──────────┐ ┌───────────────┐  │ ││
+│  │  │  │ ⌘K       │ │ Discussed│ │ Live Activity │  │ ││
+│  │  │  └──────────┘ │ Topics   │ │ Feed          │  │ ││
 │  │  └────────────────────────────────────────────────┘ ││
 │  └─────────────────────────────────────────────────────┘│
 │                                                         │
@@ -165,6 +167,8 @@ npm run electron:dev
 │   ├── page.tsx                   # Overview dashboard page
 │   ├── mentioned/
 │   │   └── page.tsx               # Mentioned messages page (@ mentions)
+│   ├── discussed-topics/
+│   │   └── page.tsx               # Discussed topics page (all clusters)
 │   └── favicon.ico
 ├── components/
 │   ├── auth/
@@ -174,20 +178,24 @@ npm run electron:dev
 │   │   ├── kpi-row.tsx            # KPI metric cards
 │   │   ├── community-activity-chart.tsx  # Hourly activity chart + heatmap
 │   │   ├── activity-heatmap.tsx   # 7-day × 24-hour activity heatmap
-│   │   ├── hot-topics.tsx         # Topic cluster list
-│   │   ├── conversation-insights.tsx     # Message drill-down
+│   │   ├── hot-topics.tsx         # Topic cluster list with View All
+│   │   ├── live-activity.tsx      # Real-time discussion timeline
+│   │   ├── conversation-insights.tsx     # Mentioned messages widget
 │   │   ├── user-sentiment.tsx     # Sentiment breakdown
 │   │   ├── mentioned-messages.tsx        # Mention cards (overview context)
-│   │   ├── mobile-header.tsx      # Mobile top header
 │   │   ├── mobile-hot-topics.tsx  # Mobile topic cards
 │   │   ├── mobile-conversation-insights.tsx  # Mobile insights cards
 │   │   └── ...
+│   ├── discussed-topics/
+│   │   ├── discussed-topics.tsx   # Full topic gallery page
+│   │   ├── topic-card.tsx         # Themed topic card component
+│   │   └── topic-modal.tsx        # Topic detail modal
 │   ├── mentioned/
 │   │   └── mentioned-table.tsx    # Dedicated mentions table (@ page)
 │   ├── shell/
 │   │   ├── shell-layout.tsx       # Main layout shell, startup pre-fetch
 │   │   ├── window-control-topbar.tsx  # Custom title bar
-│   │   ├── left-nav.tsx           # Icon sidebar (Overview, Mentioned, Changelog)
+│   │   ├── left-nav.tsx           # Icon sidebar (Overview, Mentioned, Discussed Topics, Changelog)
 │   │   ├── bottom-nav.tsx         # Mobile bottom navigation
 │   │   ├── right-sidebar.tsx      # Detail panel (cluster/message/user)
 │   │   ├── discord-sidebar.tsx    # Embedded Discord panel
@@ -204,7 +212,9 @@ npm run electron:dev
 │   └── ColorBends.tsx             # Three.js animated login background
 ├── hooks/
 │   ├── use-overview-data.ts       # Overview data fetching with cache integration
+│   ├── use-discussed-topics-data.ts # Discussed topics data with shared cache
 │   ├── use-mentions-data.ts       # Dedicated mentions fetch with cache
+│   ├── use-live-data.ts           # Live activity feed with 30s polling
 │   └── use-activity-heatmap.ts    # 7-day heatmap data fetcher
 ├── lib/
 │   ├── utils.ts                   # cn(), formatters, helpers
@@ -307,7 +317,8 @@ The main dashboard uses a **bento grid layout** (15 columns) that adapts between
 | 1–2 | 11–15 | Hot Topics (spans 2 rows) |
 | 2 | 1–6 | Community Activity Chart + Heatmap |
 | 2 | 7–10 | User Sentiment |
-| 3 | 1–15 | Conversation Insights (full width, internal scroll) |
+| 3 | 1–5 | Live Activity Feed |
+| 3 | 6–15 | Conversation Insights (Mentioned) |
 
 **Mobile layout** — stacked cards with bottom tab navigation.
 
@@ -316,19 +327,29 @@ The main dashboard uses a **bento grid layout** (15 columns) that adapts between
 | **KPI Cards** | Message count, active users, cluster count with trend deltas. Clean white cards with accent-colored shadow glow. |
 | **Community Activity Chart** | Hourly breakdown of messages and speakers with bar/line visualization. Click an hour to filter insights. |
 | **Activity Heatmap** | 7-day × 24-hour grid showing message density per hour. Integrated into the activity chart. |
-| **Hot Topics** | Clustered conversations ranked by severity (critical/high/medium/low) and sentiment. |
-| **Conversation Insights** | Drill-down into specific messages and their context. Full-width internally-scrolling panel. |
+| **Hot Topics** | Clustered conversations ranked by severity (critical/high/medium/low) and sentiment with a View All link to the full Discussed Topics page. |
+| **Live Activity Feed** | Real-time timeline of active discussions, polled every 30 seconds. Grouped by day with attention-level indicators (low/medium/high/critical). |
+| **Conversation Insights** | Mentioned messages with View All and Refresh actions. Click a row to open the exact message in the Discord sidebar. |
 | **User Sentiment** | Breakdown of frustrated, confused, neutral, and positive signals across clusters. |
-| **Mentioned Messages** | Inline mention cards in the overview context (filtered by date range). |
 
 ### Mentioned Page (`/mentioned`)
 
-Dedicated page showing **all** monitored `@` mentions across all dates (90-day lookback). Flat card layout with:
+Dedicated page showing **all** monitored `@` mentions across all dates (90-day lookback). Flat table layout with:
 
 - Header with total count badge and column labels
-- Scrollable table with columns: Author, Summary, Date & Time, Mentions, Channel
-- Clickable rows that open the message in the Discord sidebar
+- Scrollable table with columns: Author, Summary, Date & Time
+- Clickable rows that open the message in the Discord sidebar with active row highlighting
 - Independent from the calendar date range — always shows all mentions
+
+### Discussed Topics Page (`/discussed-topics`)
+
+Dedicated page showing **every topic** your community has discussed with no date constraints. Horizontal gallery layout with:
+
+- Topics organized by date in independently scrollable columns
+- Themed topic cards with AI-generated summaries and color-coded backgrounds
+- Click a card to open a detail modal with three panels: Summary, Key Issues, and Unanswered Questions (each panel scrolls independently)
+- Time filter controls (All / 7D / 30D / 90D)
+- Data is pre-fetched on app load for instant page rendering
 
 ### Shared Features
 
@@ -368,6 +389,13 @@ ZFushou uses a Zustand-based **in-memory data cache** (`stores/data-cache.ts`) t
 │  │ mentionsFetchedAt: timestamp                            │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
+│  Discussed Topics Cache (all clusters, no date filter)       │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ discussedTopicsClusters: ClusterWithSummary[]            │  │
+│  │ discussedTopicsFetchedAt: timestamp                      │  │
+│  │ discussedTopicsLoading: boolean                          │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
 │  Last-used params (for nav links)                            │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ lastFrom, lastTo, lastWindow                           │  │
@@ -377,6 +405,7 @@ ZFushou uses a Zustand-based **in-memory data cache** (`stores/data-cache.ts`) t
 
 - **Overview data** is cached per unique `from:to:activityWindow` key. Switching back to a previously loaded date range returns cached data instantly.
 - **Mentions data** has its own cache with TTL-based staleness. The Mentioned page is independent from the calendar date range.
+- **Discussed topics data** is pre-fetched on the overview page load and stored in the shared cache. The Discussed Topics page renders instantly because the data is already available.
 - **Last-used params** are stored so sidebar navigation links preserve the user's date selection even when coming from a page without URL params.
 - **Pre-fetch on startup** — clusters, messages, and mentions are fetched in parallel during `shell-layout.tsx` initialization.
 - **Auto-refresh** respects staleness — if cached data is still fresh, no re-fetch occurs.
@@ -389,7 +418,7 @@ All state is managed via **Zustand** stores:
 
 | Store | Purpose |
 |---|---|
-| `stores/data-cache.ts` | In-memory data cache with TTL-based staleness. Overview data keyed by date params; mentions data cached independently. Pre-fetch support. |
+| `stores/data-cache.ts` | In-memory data cache with TTL-based staleness. Overview data keyed by date params; mentions and discussed topics cached independently with shared pre-fetch. |
 | `stores/auth.ts` | Auth lifecycle: init, login, token handling, logout with revocation |
 | `stores/theme.ts` | Dark/light mode toggle |
 | `stores/discord-sidebar.ts` | Discord panel open/close state and URL |
