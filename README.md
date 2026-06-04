@@ -34,13 +34,14 @@ ZFushou is a cross-platform desktop app (Windows + macOS) that provides real-tim
 - **KPI metrics** — message volume, active users, cluster counts with trend deltas
 - **Activity chart & heatmap** — hourly activity breakdown with bar/line charts plus a 7-day activity heatmap
 - **Hot topics** — conversation clusters ranked by severity and sentiment with a View All link to the full archive
-- **Live activity feed** — real-time discussion timeline that polls every 30 seconds with attention-level indicators
+- **Live activity feed** — real-time discussion timeline that polls every 60 seconds with attention-level indicators and geometric SVG path animation
+- **Activity page** — full-page live feed with attention and time filters, Discord deep link integration
 - **Conversation insights** — mentioned messages with context and a View All link to the dedicated page
 - **Mentioned page** — dedicated view of all monitored `@` mentions across all dates with active row highlighting
 - **Discussed topics page** — full archive of every community topic organized by date with detail modals
 - **User sentiment** — frustration, confusion, neutral, and positive breakdowns
 
-The app includes an embedded Discord sidebar for direct community access, a command palette for quick search, full dark/light theme support, a unified Zustand data cache for instant page switching, and automatic background updates via `electron-updater`.
+The app includes an embedded Discord sidebar with deep link navigation, a command palette for quick search, full dark/light theme support, a unified Zustand data cache for instant page switching, Discord deep link navigation from activity items and mentions, and automatic background updates via `electron-updater`.
 
 ---
 
@@ -87,11 +88,11 @@ The app includes an embedded Discord sidebar for direct community access, a comm
 │  │  │  React Dashboard (App Router)                  │ ││
 │  │  │  ┌──────────┐ ┌──────────┐ ┌───────────────┐  │ ││
 │  │  │  │ Shell    │ │ Overview │ │ Mentioned     │  │ ││
-│  │  │  │ Layout   │ │ Dashboard│ │ Page (@)      │  │ ││
-│  │  │  ├──────────┤ └──────────┘ └───────────────┘  │ ││
-│  │  │  │ Search   │ ┌──────────┐ ┌───────────────┐  │ ││
-│  │  │  │ ⌘K       │ │ Discussed│ │ Live Activity │  │ ││
-│  │  │  └──────────┘ │ Topics   │ │ Feed          │  │ ││
+  │  │  │  │ Layout   │ │ Dashboard│ │ Page (@)      │  │ ││
+  │  │  │  ├──────────┤ └──────────┘ └───────────────┘  │ ││
+  │  │  │  │ Search   │ ┌──────────┐ ┌───────────────┐  │ ││
+  │  │  │  │ ⌘K       │ │ Discussed│ │ Activity Page │  │ ││
+  │  │  │  └──────────┘ │ Topics   │ │ (Live Feed)   │  │ ││
 │  │  └────────────────────────────────────────────────┘ ││
 │  └─────────────────────────────────────────────────────┘│
 │                                                         │
@@ -169,6 +170,8 @@ npm run electron:dev
 │   │   └── page.tsx               # Mentioned messages page (@ mentions)
 │   ├── discussed-topics/
 │   │   └── page.tsx               # Discussed topics page (all clusters)
+│   ├── activity/
+│   │   └── page.tsx               # Live activity feed page (full-page timeline)
 │   └── favicon.ico
 ├── components/
 │   ├── auth/
@@ -179,8 +182,8 @@ npm run electron:dev
 │   │   ├── community-activity-chart.tsx  # Hourly activity chart + heatmap
 │   │   ├── activity-heatmap.tsx   # 7-day × 24-hour activity heatmap
 │   │   ├── hot-topics.tsx         # Topic cluster list with View All
-│   │   ├── live-activity.tsx      # Real-time discussion timeline
-│   │   ├── conversation-insights.tsx     # Mentioned messages widget
+│   │   ├── live-activity.tsx      # Real-time discussion timeline (overview widget)
+│   │   ├── conversation-insights.tsx     # Mentioned messages widget with Discord deep links
 │   │   ├── user-sentiment.tsx     # Sentiment breakdown
 │   │   ├── mentioned-messages.tsx        # Mention cards (overview context)
 │   │   ├── mobile-hot-topics.tsx  # Mobile topic cards
@@ -192,10 +195,18 @@ npm run electron:dev
 │   │   └── topic-modal.tsx        # Topic detail modal
 │   ├── mentioned/
 │   │   └── mentioned-table.tsx    # Dedicated mentions table (@ page)
+│   ├── activity/
+│   │   ├── live-activity.tsx      # Full-page live feed with filters + deep links
+│   │   ├── live-activity-timeline.tsx  # Geometric SVG timeline with signal animation
+│   │   ├── live-activity-row.tsx  # Timeline row + section header components
+│   │   ├── live-activity-details.tsx   # Case detail panel (optional)
+│   │   ├── live-activity-summary.tsx   # Summary stats bar (optional)
+│   │   ├── live-activity-format.ts     # Shared attention styles, date utils, helpers
+│   │   └── use-live-timeline-motion.ts # Timeline animation hook (geometric path + signal)
 │   ├── shell/
 │   │   ├── shell-layout.tsx       # Main layout shell, startup pre-fetch
 │   │   ├── window-control-topbar.tsx  # Custom title bar
-│   │   ├── left-nav.tsx           # Icon sidebar (Overview, Mentioned, Discussed Topics, Changelog)
+│   │   ├── left-nav.tsx           # Icon sidebar (Overview, Mentioned, Discussed Topics, Activity, Changelog)
 │   │   ├── bottom-nav.tsx         # Mobile bottom navigation
 │   │   ├── right-sidebar.tsx      # Detail panel (cluster/message/user)
 │   │   ├── discord-sidebar.tsx    # Embedded Discord panel
@@ -214,7 +225,7 @@ npm run electron:dev
 │   ├── use-overview-data.ts       # Overview data fetching with cache integration
 │   ├── use-discussed-topics-data.ts # Discussed topics data with shared cache
 │   ├── use-mentions-data.ts       # Dedicated mentions fetch with cache
-│   ├── use-live-data.ts           # Live activity feed with 30s polling
+│   ├── use-live-data.ts           # Live activity feed with 60s polling + visibility pause
 │   └── use-activity-heatmap.ts    # 7-day heatmap data fetcher
 ├── lib/
 │   ├── utils.ts                   # cn(), formatters, helpers
@@ -256,6 +267,7 @@ npm run electron:dev
 - **Single instance lock** — Second launches forward deep links to the running instance
 - **Standalone server** — Production mode forks `.next/standalone/server.js` on a random port
 - **Discord sidebar** — Separate `WebContentsView` with mobile-emulated Discord (430px, spoofed iPhone UA)
+- **CORS fix** — Overwrites Supabase edge function response headers via `onHeadersReceived` to prevent duplicate CORS values
 - **Window modes** — Login mode (small, locked 1000×650) and dashboard mode (resizable 1440×920)
 - **Keychain auth** — Tokens stored in OS keychain via `keytar` (Windows Credential Vault / macOS Keychain)
 - **Auto-updater** — `electron-updater` checks GitHub Releases for updates, auto-downloads, and prompts to restart
@@ -328,8 +340,8 @@ The main dashboard uses a **bento grid layout** (15 columns) that adapts between
 | **Community Activity Chart** | Hourly breakdown of messages and speakers with bar/line visualization. Click an hour to filter insights. |
 | **Activity Heatmap** | 7-day × 24-hour grid showing message density per hour. Integrated into the activity chart. |
 | **Hot Topics** | Clustered conversations ranked by severity (critical/high/medium/low) and sentiment with a View All link to the full Discussed Topics page. |
-| **Live Activity Feed** | Real-time timeline of active discussions, polled every 30 seconds. Grouped by day with attention-level indicators (low/medium/high/critical). |
-| **Conversation Insights** | Mentioned messages with View All and Refresh actions. Click a row to open the exact message in the Discord sidebar. |
+| **Live Activity Feed** | Real-time timeline of active discussions, polled every 60 seconds. Geometric SVG path with traveling signal highlight on hover. Grouped by day with attention-level indicators (low/medium/high/critical). Click to open the conversation in the Discord sidebar. |
+| **Conversation Insights** | Mentioned messages with View All and Refresh actions. Click a row to open the exact message in the Discord sidebar via deep link. |
 | **User Sentiment** | Breakdown of frustrated, confused, neutral, and positive signals across clusters. |
 
 ### Mentioned Page (`/mentioned`)
@@ -351,12 +363,26 @@ Dedicated page showing **every topic** your community has discussed with no date
 - Time filter controls (All / 7D / 30D / 90D)
 - Data is pre-fetched on app load for instant page rendering
 
+### Activity Page (`/activity`)
+
+Full-page real-time activity feed showing every tracked case in the community.
+
+- **Attention filter** — filter by Critical, High, Medium, or Low attention level
+- **Time filter** — Past 1h, 6h, 24h, 7d, or all time
+- **Geometric timeline** — SVG connector path is mostly vertical with small routed detours (straight segments + 3px radius corners). Traveling signal highlight follows the path geometry on hover via `stroke-dasharray` animation
+- **Discord deep links** — click any case to open the right Discord sidebar directly at the latest message. Uses `guild_id`, `thread_id || channel_id`, and `last_message_id` to construct the deep link. Auto-updates with every poll cycle
+- **Status display** — shows current case status (maps `dormant` → "Product side", hides "unknown")
+- **Skeleton loader** — animated placeholder during initial data fetch
+- Independent from the calendar date range — always shows live data
+
 ### Shared Features
 
 | Feature | Description |
 |---|---|
 | **Command Palette (⌘K)** | Quick search across all clusters and messages |
-| **Discord Sidebar** | Embedded Discord channel in a mobile-emulated panel |
+| **Discord Sidebar** | Embedded Discord channel in a mobile-emulated panel. Navigates to specific messages via deep links from Live Activity and Mentioned pages |
+| **Discord Deep Links** | Click any case or mention to open the right sidebar at the exact Discord message. Uses `navigateDiscordSidebar()` with sequence counter for reliable navigation |
+| **Visibility Pause** | Polling and auto-refresh pause when the app window is minimized or hidden (via `visibilitychange` API) |
 | **Dark/Light Theme** | Full theme toggle with CSS variable-driven theming |
 | **Zoom Controls** | Custom zoom in/out/reset with Discord sidebar zoom compensation |
 | **Date Range Picker** | URL-driven date selection with presets (Past 24 Hours, Yesterday, Last 3/7 Days) |
@@ -409,6 +435,7 @@ ZFushou uses a Zustand-based **in-memory data cache** (`stores/data-cache.ts`) t
 - **Last-used params** are stored so sidebar navigation links preserve the user's date selection even when coming from a page without URL params.
 - **Pre-fetch on startup** — clusters, messages, and mentions are fetched in parallel during `shell-layout.tsx` initialization.
 - **Auto-refresh** respects staleness — if cached data is still fresh, no re-fetch occurs.
+- **Visibility-aware polling** — live feed and overview auto-refresh pause when the app is minimized or hidden, resume immediately when visible.
 
 ---
 
@@ -421,7 +448,7 @@ All state is managed via **Zustand** stores:
 | `stores/data-cache.ts` | In-memory data cache with TTL-based staleness. Overview data keyed by date params; mentions and discussed topics cached independently with shared pre-fetch. |
 | `stores/auth.ts` | Auth lifecycle: init, login, token handling, logout with revocation |
 | `stores/theme.ts` | Dark/light mode toggle |
-| `stores/discord-sidebar.ts` | Discord panel open/close state and URL |
+| `stores/discord-sidebar.ts` | Discord panel open/close state, URL, and `navigateDiscordSidebar()` for reliable deep link navigation |
 | `stores/sidebar.ts` | Right sidebar detail panel — cluster, message, or user mode with associated data |
 
 URL state (date ranges, window mode) is handled by **nuqs** via query parameters.
