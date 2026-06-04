@@ -23,7 +23,7 @@ function formatSummary(raw: string | null): string {
 }
 
 export function MentionedMessages({ mentions }: { mentions: MentionedMessage[] }) {
-  const openDiscordSidebar = useDiscordSidebarStore((s) => s.openDiscordSidebar);
+  const navigateDiscordSidebar = useDiscordSidebarStore((s) => s.navigateDiscordSidebar);
   const sidebarOpen = useDiscordSidebarStore((s) => s.open);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -71,12 +71,12 @@ export function MentionedMessages({ mentions }: { mentions: MentionedMessage[] }
                 key={m.message_id}
                 tabIndex={0}
                 role="button"
-                onClick={() => { setActiveId(m.message_id); openDiscordSidebar(buildDiscordDeepLink(m)); }}
+                onClick={() => { setActiveId(m.message_id); navigateDiscordSidebar(buildDiscordDeepLink(m)); }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     setActiveId(m.message_id);
-                    openDiscordSidebar(buildDiscordDeepLink(m));
+                    navigateDiscordSidebar(buildDiscordDeepLink(m));
                   }
                 }}
                 className={`border-b border-sage-50 dark:border-[#3B3B3B] group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sage-300 ${

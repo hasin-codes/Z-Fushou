@@ -12,6 +12,7 @@ import {
   LogOut,
   HelpCircle,
   MessageSquareText,
+  Activity,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ const MAIN_ITEMS = [
   { label: 'Overview', href: '/', icon: Home },
   { label: 'Mentioned', href: '/mentioned', icon: AtSign },
   { label: 'Discussed Topics', href: '/discussed-topics', icon: MessageSquareText },
+  { label: 'Activity', href: '/activity', icon: Activity },
 ];
 
 export function LeftNav() {

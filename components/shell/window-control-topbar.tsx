@@ -165,7 +165,7 @@ export function WindowControlTopbar() {
   };
 
   // Hide calendar on pages that don't use date filtering
-  const hideCalendar = pathname === '/mentioned' || pathname === '/discussed-topics';
+  const hideCalendar = pathname === '/mentioned' || pathname === '/discussed-topics' || pathname === '/activity';
 
   // Format Date range text for the pill button
   const formatDateRangeText = () => {

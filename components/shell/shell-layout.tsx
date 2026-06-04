@@ -10,12 +10,15 @@ import { WindowControlTopbar } from '@/components/shell/window-control-topbar';
 import { edgeGet } from '@/lib/edge-fetch';
 import { normalizeEdgeClusters } from '@/lib/edge-normalize';
 import { fetchAndCacheMentions } from '@/hooks/use-mentions-data';
+import { useDataCache } from '@/stores/data-cache';
 import type { ClusterWithSummary, EnrichedMessage } from '@/types';
 
 export function ShellLayout({ children }: { children: React.ReactNode }) {
-  const [clusters, setClusters] = useState<ClusterWithSummary[]>([]);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
+  // Read clusters from the shared Zustand cache (populated by overview or discussed topics)
+  const clusters = useDataCache((s) => s.discussedTopicsClusters);
 
   // Listen for downloaded updates
   useEffect(() => {
@@ -27,9 +30,18 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Only fetch messages and mentions here; clusters come from the shared cache
+    const clustersPromise = useDataCache.getState().discussedTopicsClusters.length > 0
+      ? Promise.resolve(useDataCache.getState().discussedTopicsClusters)
+      : edgeGet<unknown>('clusters?limit=500')
+          .then(normalizeEdgeClusters)
+          .then((data) => {
+            useDataCache.getState().setDiscussedTopics(data);
+            return data;
+          });
+
     Promise.all([
-      edgeGet<unknown>('clusters?limit=500')
-        .then(normalizeEdgeClusters),
+      clustersPromise,
       edgeGet<Record<string, unknown>>('messages?limit=500')
         .then((data) => {
           const list = Array.isArray(data.messages) ? data.messages : Array.isArray(data) ? data : [];
@@ -37,13 +49,11 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
         }),
       fetchAndCacheMentions(),
     ])
-      .then(([clustersData, messagesData]) => {
-        setClusters(clustersData);
+      .then(([, messagesData]) => {
         setMessages(messagesData);
       })
       .catch((err) => {
         console.error('[shell-layout] edge fetch failed:', err);
-        setClusters([]);
         setMessages([]);
       });
   }, []);

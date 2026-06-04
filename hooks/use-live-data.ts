@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { edgeGet } from '@/lib/edge-fetch';
 import type { LiveCase } from '@/types';
 
-const POLL_INTERVAL = 30_000; // 30 seconds
+const POLL_INTERVAL = 60_000; // 60 seconds
 const ENDPOINT = 'live-timeline?status=all&limit=50';
 
 interface LiveData {
@@ -47,11 +47,28 @@ export function useLiveData(): LiveData {
     }
   }, []);
 
-  // Initial fetch + polling interval
+  // Initial fetch + polling interval (pauses when app is hidden)
   useEffect(() => {
     poll();
-    const interval = window.setInterval(poll, POLL_INTERVAL);
-    return () => window.clearInterval(interval);
+    let interval = window.setInterval(poll, POLL_INTERVAL);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        // Resume: immediate poll + restart interval
+        poll();
+        window.clearInterval(interval);
+        interval = window.setInterval(poll, POLL_INTERVAL);
+      } else {
+        // Pause: clear interval
+        window.clearInterval(interval);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [poll]);
 
   return { cases, connected, initialLoading, refetch: poll };

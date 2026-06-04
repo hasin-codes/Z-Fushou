@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { addDays, beijingTodayKey, beijingHourFromUtc, utcBoundsForBeijingDate, utcBoundsForBeijingRange } from '@/lib/date-ranges';
+import { addDays, beijingTodayKey, beijingHourFromUtc, beijingDateKeyFromUtc, utcBoundsForBeijingRange } from '@/lib/date-ranges';
 import { edgeGet } from '@/lib/edge-fetch';
 import { normalizeEdgeKpi, normalizeEdgeClusters, normalizeEdgeMentions, normalizeEdgeActivity } from '@/lib/edge-normalize';
 import { useDataCache } from '@/stores/data-cache';
@@ -52,42 +52,51 @@ function currentBeijingHour(): number {
 async function fetchHeatmapDays(): Promise<HeatmapDay[]> {
   const todayKey = beijingTodayKey();
   const nowHour = currentBeijingHour();
+  const oldestKey = addDays(todayKey, -6);
+
   const dayKeys: string[] = [];
   for (let i = 6; i >= 0; i--) {
     dayKeys.push(addDays(todayKey, -i));
   }
 
-  const results: HeatmapDay[] = [];
+  // Single activity call for the full 7-day range instead of 7 separate calls
+  try {
+    const { start, end } = utcBoundsForBeijingRange(oldestKey, todayKey);
+    const raw = await edgeGet<AnyJson>(`activity?from=${start}&to=${end}`);
+    const data = raw?.ok && raw?.data !== undefined ? raw.data : raw;
+    const rawHours: { hour: string; message_count: number }[] = data?.hours ?? [];
 
-  for (const dayKey of dayKeys) {
-    const isToday = dayKey === todayKey;
-    try {
-      const { start, end } = utcBoundsForBeijingDate(dayKey);
-      const raw = await edgeGet<AnyJson>(`activity?from=${start}&to=${end}`);
-      const data = raw?.ok && raw?.data !== undefined ? raw.data : raw;
-      const rawHours: { hour: string; message_count: number }[] = data?.hours ?? [];
+    // Bucket each hour entry into its Beijing day
+    const dayMap = new Map<string, number[]>();
+    for (const dk of dayKeys) {
+      dayMap.set(dk, new Array(24).fill(0) as number[]);
+    }
 
-      const hours = new Array(24).fill(0) as number[];
-      for (const h of rawHours) {
-        const hourNum = beijingHourFromUtc(h.hour);
-        if (hourNum >= 0 && hourNum < 24) {
-          hours[hourNum] += h.message_count || 0;
-        }
+    for (const h of rawHours) {
+      const hourNum = beijingHourFromUtc(h.hour);
+      if (hourNum < 0 || hourNum >= 24) continue;
+      const dateKey = beijingDateKeyFromUtc(h.hour);
+      const bucket = dayMap.get(dateKey);
+      if (bucket) {
+        bucket[hourNum] += h.message_count || 0;
       }
+    }
 
-      if (isToday) {
+    return dayKeys.map((dk) => {
+      const hours = dayMap.get(dk)!;
+      if (dk === todayKey) {
         for (let h = nowHour + 1; h < 24; h++) {
           hours[h] = 0;
         }
       }
-
-      results.push({ date: dayKey, dayLabel: getDayFull(dayKey), dayShort: getDayShort(dayKey), hours });
-    } catch {
-      results.push({ date: dayKey, dayLabel: getDayFull(dayKey), dayShort: getDayShort(dayKey), hours: new Array(24).fill(0) as number[] });
-    }
+      return { date: dk, dayLabel: getDayFull(dk), dayShort: getDayShort(dk), hours };
+    });
+  } catch {
+    return dayKeys.map((dk) => ({
+      date: dk, dayLabel: getDayFull(dk), dayShort: getDayShort(dk),
+      hours: new Array(24).fill(0) as number[],
+    }));
   }
-
-  return results;
 }
 
 function makeKey(from: string, to: string, activityWindow: string): string {
@@ -218,17 +227,36 @@ export function useOverviewData(): OverviewData {
     }
   }, [cacheKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-refresh on 10-min interval
+  // Auto-refresh on 10-min interval (pauses when app is hidden)
   useEffect(() => {
     if (!from || !to) return;
-    const interval = window.setInterval(() => {
-      // Only refetch if cache is stale
+
+    const maybeRefresh = () => {
       const entry = useDataCache.getState().overviewEntries[cacheKey];
       if (!entry || Date.now() - entry.fetchedAt > CACHE_TTL) {
         fetchData();
       }
-    }, 10 * 60 * 1000);
-    return () => window.clearInterval(interval);
+    };
+
+    let interval = window.setInterval(maybeRefresh, 10 * 60 * 1000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        // Resume: check staleness immediately + restart interval
+        maybeRefresh();
+        window.clearInterval(interval);
+        interval = window.setInterval(maybeRefresh, 10 * 60 * 1000);
+      } else {
+        // Pause: clear interval
+        window.clearInterval(interval);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [fetchData, cacheKey]);
 
   return {

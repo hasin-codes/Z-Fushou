@@ -25,7 +25,7 @@ function getZoomFactor(): number {
 export function DiscordSidebar() {
   const slotRef = useRef<HTMLDivElement | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
-  const { open, url, closeDiscordSidebar } = useDiscordSidebarStore();
+  const { open, url, navSeq, closeDiscordSidebar } = useDiscordSidebarStore();
   const [zoomFactor, setZoomFactor] = useState(getZoomFactor);
 
   // CSS width that compensates for zoom so the slot is always DISCORD_FIXED_WIDTH physical pixels
@@ -68,7 +68,7 @@ export function DiscordSidebar() {
       window.cancelAnimationFrame(frame);
       timers.forEach(window.clearTimeout);
     };
-  }, [open, syncBounds, url]);
+  }, [open, syncBounds, url, navSeq]);
 
   useEffect(() => {
     const slot = slotRef.current;

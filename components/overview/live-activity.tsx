@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback, useId } from 'react';
+import Link from 'next/link';
 import { DashboardCard } from '@/components/shared/dashboard-card';
 import type { LiveCase, AttentionLevel } from '@/types';
 
@@ -114,25 +115,25 @@ function groupCasesByDay(cases: LiveCase[]): TimelineGroup[] {
   }, []);
 }
 
-const createSmoothPath = (pts: { x: number; y: number }[]) => {
+const createRoutedPath = (pts: { x: number; y: number }[]) => {
   if (pts.length === 0) return '';
   let d = `M ${pts[0].x} ${pts[0].y}`;
-  
+
   for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i - 2] || pts[i - 1];
-    const curr = pts[i - 1];
-    const next = pts[i];
-    const after = pts[i + 1] || next;
-    
-    const smoothing = 0.22;
-    
-    const cp1x = curr.x + (next.x - prev.x) * smoothing;
-    const cp1y = curr.y + (next.y - prev.y) * smoothing;
-    
-    const cp2x = next.x - (after.x - curr.x) * smoothing;
-    const cp2y = next.y - (after.y - curr.y) * smoothing;
-    
-    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+    const prev = pts[i - 1];
+    const curr = pts[i];
+
+    if (prev.x === curr.x) {
+      d += ` L ${curr.x} ${curr.y}`;
+    } else {
+      const yMid = (prev.y + curr.y) / 2;
+      const yA = yMid - 6;
+      const yB = yMid + 6;
+      const r = 3;
+      d += ` L ${prev.x} ${yA}`;
+      d += ` C ${prev.x} ${yA + r}, ${curr.x} ${yB - r}, ${curr.x} ${yB}`;
+      d += ` L ${curr.x} ${curr.y}`;
+    }
   }
   return d;
 };
@@ -178,7 +179,7 @@ function LiveCard({ c, index, isHovered, onHover, xOffset }: LiveCardProps) {
     >
       <span
         className={`timeline-dot absolute left-[17px] top-1/2 h-[7px] w-[7px] rounded-full transition-all duration-300 ease-out origin-center ${
-          isHovered ? `${styles.activeDot} ring-[3px] ${styles.activeRing} ${styles.glow} scale-125` : styles.dot
+          isHovered ? `${styles.activeDot} ring-[3px] ${styles.activeRing} scale-[1.06]` : styles.dot
         }`}
         style={{ transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0)` }}
         data-index={index}
@@ -217,12 +218,11 @@ interface LiveActivityProps {
 export function LiveActivity({ cases, connected, initialLoading }: LiveActivityProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const timelineGroups = useMemo(() => groupCasesByDay(cases), [cases]);
+  const gradientId = useId().replace(/:/g, '');
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const [dotYPositions, setDotYPositions] = useState<number[]>([]);
   const [timelineHeight, setTimelineHeight] = useState<number>(0);
-
-  const [xOffsets, setXOffsets] = useState<number[]>([]);
   const [glowY, setGlowY] = useState<number | null>(null);
   const [glowOpacity, setGlowOpacity] = useState<number>(0);
 
@@ -249,18 +249,10 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
     return map;
   }, [allDotsList]);
 
-  // 3. Target X offsets based on hovered index
-  const targets = useMemo(() => {
-    const arr = new Array(allDotsList.length).fill(0);
-    if (hoveredIndex !== null) {
-      const h = allDotsList.findIndex(d => d.type === 'card' && d.cardIndex === hoveredIndex);
-      if (h !== -1) {
-        if (h - 1 >= 0) arr[h - 1] = -12;
-        if (h - 2 >= 0) arr[h - 2] = -4;
-      }
-    }
-    return arr;
-  }, [allDotsList, hoveredIndex]);
+  // 3. Static X offsets: sections offset left by 4px, cards centered
+  const xOffsets = useMemo(() => {
+    return allDotsList.map((dot) => (dot.type === 'section' ? -4 : 0));
+  }, [allDotsList]);
 
   // 4. Measure dot positions
   const measureYPositions = useCallback(() => {
@@ -277,13 +269,9 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
 
   useEffect(() => {
     if (cases.length === 0) return;
-    
     measureYPositions();
-    
-    // Schedule a couple of frames to ensure stable rendering measurement
     const id1 = requestAnimationFrame(measureYPositions);
     const id2 = setTimeout(measureYPositions, 100);
-
     window.addEventListener('resize', measureYPositions);
     return () => {
       cancelAnimationFrame(id1);
@@ -292,17 +280,16 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
     };
   }, [cases, measureYPositions]);
 
-  // 5. Interpolate offsets, glow position, and opacity using requestAnimationFrame
+  // 5. Animate only glowY and glowOpacity — no dot displacement
   useEffect(() => {
     if (allDotsList.length === 0) return;
 
-    if (xOffsets.length !== allDotsList.length) {
-      setXOffsets(new Array(allDotsList.length).fill(0));
-      return;
-    }
-
-    const h = hoveredIndex !== null ? allDotsList.findIndex(d => d.type === 'card' && d.cardIndex === hoveredIndex) : -1;
-    const targetY = (h !== -1 && dotYPositions[h] !== undefined) ? dotYPositions[h] : null;
+    const h = hoveredIndex !== null
+      ? allDotsList.findIndex(d => d.type === 'card' && d.cardIndex === hoveredIndex)
+      : -1;
+    const rawY = (h !== -1 && dotYPositions[h] !== undefined) ? dotYPositions[h] : null;
+    const aboveOffset = 25;
+    const targetY = rawY !== null ? rawY - aboveOffset : null;
     const targetOpacity = hoveredIndex !== null ? 1 : 0;
 
     let animationFrameId: number;
@@ -315,28 +302,17 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
     const tick = () => {
       let changed = false;
 
-      // Lerp X offsets
-      const nextOffsets = xOffsets.map((curr, idx) => {
-        const target = targets[idx] ?? 0;
-        if (curr !== target) {
-          changed = true;
-          return lerp(curr, target, 0.18);
-        }
-        return curr;
-      });
-
-      // Lerp opacity
       let nextOpacity = glowOpacity;
       if (glowOpacity !== targetOpacity) {
         changed = true;
-        nextOpacity = lerp(glowOpacity, targetOpacity, 0.18);
+        nextOpacity = lerp(glowOpacity, targetOpacity, 0.15);
       }
 
-      // Lerp glowY
       let nextGlowY = glowY;
       if (targetY !== null) {
-        if (glowY === null) {
-          nextGlowY = targetY;
+        if (glowY === null || glowOpacity < 0.05) {
+          // Slide in from above to create a traveling signal effect
+          nextGlowY = targetY - 30;
           changed = true;
         } else if (glowY !== targetY) {
           changed = true;
@@ -345,38 +321,34 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
       }
 
       if (changed) {
-        setXOffsets(nextOffsets);
         setGlowOpacity(nextOpacity);
         if (nextGlowY !== null) setGlowY(nextGlowY);
         animationFrameId = requestAnimationFrame(tick);
       }
     };
 
-    const hasXDiff = xOffsets.some((curr, idx) => curr !== (targets[idx] ?? 0));
     const hasOpacityDiff = Math.abs(glowOpacity - targetOpacity) > 0.01;
     const hasYDiff = targetY !== null && glowY !== targetY;
 
-    if (hasXDiff || hasOpacityDiff || hasYDiff) {
+    if (hasOpacityDiff || hasYDiff) {
       animationFrameId = requestAnimationFrame(tick);
     }
 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [targets, xOffsets, glowOpacity, glowY, hoveredIndex, dotYPositions, allDotsList]);
+  }, [glowOpacity, glowY, hoveredIndex, dotYPositions, allDotsList]);
 
-  // 6. Generate points for SVG path
+  // 6. Generate points for SVG path (static offsets)
   const points = useMemo(() => {
-    if (dotYPositions.length !== allDotsList.length || xOffsets.length !== allDotsList.length) {
-      return [];
-    }
+    if (dotYPositions.length !== allDotsList.length) return [];
     return allDotsList.map((dot, idx) => ({
       x: 17 + (xOffsets[idx] ?? 0),
-      y: (dotYPositions[idx] ?? 12) - 12, // Offset by 12px due to SVG's top-3 (12px) positioning
+      y: (dotYPositions[idx] ?? 12) - 12,
     }));
   }, [allDotsList, dotYPositions, xOffsets]);
 
-  const pathD = useMemo(() => createSmoothPath(points), [points]);
+  const pathD = useMemo(() => createRoutedPath(points), [points]);
 
   const hoveredCase = hoveredIndex !== null ? cases[hoveredIndex] : null;
   const hoveredLevel = hoveredCase?.attention_score || 'low';
@@ -402,15 +374,27 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
               />
             </span>
           </div>
+          <Link
+            href="/activity"
+            className="text-[11px] font-semibold text-sage-400 hover:text-sage-600 dark:text-[#7C7C7C] dark:hover:text-[#A8A8A8] transition-colors"
+          >
+            View All
+          </Link>
         </div>
       }
     >
       <div className="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2 pt-1">
         {initialLoading && cases.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-[11px] font-medium text-sage-300 dark:text-[#606060]">
-              Loading...
-            </p>
+          <div className="flex flex-1 flex-col gap-3 px-2 py-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-slate-200 dark:bg-[#3C3C3C] animate-pulse shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-[#3C3C3C] animate-pulse" />
+                  <div className="h-2 w-1/3 rounded bg-slate-100 dark:bg-[#333] animate-pulse" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : cases.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
@@ -426,61 +410,30 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
               style={{ height: timelineHeight ? `${timelineHeight - 24}px` : 'calc(100% - 24px)' }}
             >
               <defs>
+                {/* Local gradient that travels with the glow position */}
                 <linearGradient
-                  id="timeline-line-gradient"
+                  id={`${gradientId}-ov-highlight`}
                   gradientUnits="userSpaceOnUse"
                   x1="0"
-                  y1="0"
+                  y1={glowY !== null ? glowY - 12 - 60 : 0}
                   x2="0"
-                  y2={timelineHeight ? timelineHeight - 24 : 100}
+                  y2={glowY !== null ? glowY - 12 + 60 : 100}
                 >
-                  {glowOpacity > 0 && glowY !== null && timelineHeight > 0 ? (
-                    <>
-                      <stop
-                        offset="0%"
-                        className="text-slate-200/60 dark:text-[#3A3A3A]/60"
-                        stopColor="currentColor"
-                        stopOpacity={1}
-                      />
-                      <stop
-                        offset={`${Math.max(0, ((glowY - 12) / Math.max(1, timelineHeight - 24)) * 100 - 15)}%`}
-                        className="text-slate-200/60 dark:text-[#3A3A3A]/60"
-                        stopColor="currentColor"
-                        stopOpacity={1 - glowOpacity * 0.4}
-                      />
-                      <stop
-                        offset={`${Math.min(100, Math.max(0, ((glowY - 12) / Math.max(1, timelineHeight - 24)) * 100))}%`}
-                        stopColor={GLOW_COLORS[hoveredLevel] || '#94a3b8'}
-                        stopOpacity={glowOpacity}
-                      />
-                      <stop
-                        offset={`${Math.min(100, ((glowY - 12) / Math.max(1, timelineHeight - 24)) * 100 + 15)}%`}
-                        className="text-slate-200/60 dark:text-[#3A3A3A]/60"
-                        stopColor="currentColor"
-                        stopOpacity={1 - glowOpacity * 0.4}
-                      />
-                      <stop
-                        offset="100%"
-                        className="text-slate-200/60 dark:text-[#3A3A3A]/60"
-                        stopColor="currentColor"
-                        stopOpacity={1}
-                      />
-                    </>
-                  ) : (
-                    <stop
-                      offset="100%"
-                      className="text-slate-200/60 dark:text-[#3A3A3A]/60"
-                      stopColor="currentColor"
-                    />
-                  )}
+                  <stop offset="0%" stopColor={GLOW_COLORS[hoveredLevel] || '#94a3b8'} stopOpacity={0} />
+                  <stop offset="20%" stopColor={GLOW_COLORS[hoveredLevel] || '#94a3b8'} stopOpacity={1} />
+                  <stop offset="80%" stopColor={GLOW_COLORS[hoveredLevel] || '#94a3b8'} stopOpacity={1} />
+                  <stop offset="100%" stopColor={GLOW_COLORS[hoveredLevel] || '#94a3b8'} stopOpacity={0} />
                 </linearGradient>
               </defs>
+
+              {/* Base path — thin, faint, resting state */}
               {pathD ? (
                 <path
                   d={pathD}
                   fill="none"
-                  stroke="url(#timeline-line-gradient)"
-                  strokeWidth="1.5"
+                  className="text-slate-300/50 dark:text-[#555555]/50"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
                 />
               ) : (
                 <line
@@ -488,9 +441,24 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
                   y1="0"
                   x2="17"
                   y2="100%"
-                  className="text-slate-200/60 dark:text-[#3A3A3A]/60"
+                  className="text-slate-300/50 dark:text-[#555555]/50"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="1.2"
+                />
+              )}
+
+              {/* Traveling highlight overlay */}
+              {glowOpacity > 0 && glowY !== null && pathD && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={`url(#${gradientId}-ov-highlight)`}
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  style={{
+                    opacity: glowOpacity,
+                    transition: 'opacity 0.2s ease',
+                  }}
                 />
               )}
             </svg>
@@ -498,6 +466,7 @@ export function LiveActivity({ cases, connected, initialLoading }: LiveActivityP
             {timelineGroups.map((group) => {
               const sectionId = `section-${group.key}`;
               const sectionFlatIdx = dotFlatIndexMap.get(sectionId) ?? 0;
+              // Static offset: sections are -4px left, cards are 0
               const sectionXOffset = xOffsets[sectionFlatIdx] ?? 0;
 
               return (
